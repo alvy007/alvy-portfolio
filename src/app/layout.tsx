@@ -62,6 +62,10 @@ export const metadata: Metadata = {
   publisher: 'Alvy Rahman Masum',
   category: 'Technology',
 
+  verification: {
+    google: 'CCiK3Ws-2CrcJZaizsjKFWLm7Q2rv-uSgc2PqouJMBE',
+  },
+
   alternates: {
     canonical: siteUrl,
   },
