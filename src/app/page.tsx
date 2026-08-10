@@ -3,6 +3,7 @@ import { BackgroundEffects } from '../components/BackgroundEffects';
 import { CertificationsSection } from '../components/CertificationsSection';
 import { CodingProfiles } from '../components/CodingProfiles';
 import { ContactSection } from '../components/ContactSection';
+import { FeaturedSpotlight } from '../components/FeaturedSpotlight';
 import { Footer } from '../components/Footer';
 import { HardwareLab } from '../components/HardwareLab';
 import { Hero } from '../components/Hero';
@@ -17,6 +18,8 @@ export default function Home() {
       <BackgroundEffects />
       <Navbar />
       <Hero />
+
+      <FeaturedSpotlight />
 
       <section id="story" className="relative z-10 section-container py-24">
         <div className="glass-card rounded-3xl p-8 md:p-12">

@@ -139,6 +139,7 @@ export const projects: Project[] = [
     tech: ['React', 'React Native', 'Supabase', 'AI Planning', 'Fitness Tech'],
     image: '/window.svg',
     featured: true,
+    liveLink: 'https://fitbondhu.netlify.app/',
     story: [
       {
         label: 'The Problem',
