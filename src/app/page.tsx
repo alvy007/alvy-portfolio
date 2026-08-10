@@ -7,17 +7,22 @@ import { FeaturedSpotlight } from '../components/FeaturedSpotlight';
 import { Footer } from '../components/Footer';
 import { HardwareLab } from '../components/HardwareLab';
 import { Hero } from '../components/Hero';
+import { HeroQuote } from '../components/HeroQuote';
 import { Navbar } from '../components/Navbar';
 import { ProjectsSection } from '../components/ProjectsSection';
 import { ResearchSection } from '../components/ResearchSection';
 import { SkillUniverse } from '../components/SkillUniverse';
+import { TechStackShowcase } from '../components/TechStackShowcase';
 
 export default function Home() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#030712] text-white">
       <BackgroundEffects />
       <Navbar />
+
       <Hero />
+      <HeroQuote />
+      <TechStackShowcase />
 
       <FeaturedSpotlight />
 
