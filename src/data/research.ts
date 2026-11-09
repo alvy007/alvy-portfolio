@@ -6,38 +6,40 @@ export type ResearchItem = {
   tags: string[];
   pdf?: string;
   image?: string;
+  active?: boolean;
 };
 
 export const researchItems: ResearchItem[] = [
   {
-    title: 'Waste Detection and Classification Using 6DOF Robotic Hand',
-    status: 'Final Year Project / Ongoing Research',
-    field: 'AI Robotics · Computer Vision · Sustainable Automation',
+    title: 'Human-AI Reliance & Trust in Generative AI',
+    status: '2026 · Ongoing',
+    field: 'Human-Computer Interaction · Generative AI · Mixed-Method Research',
     description:
-      'A research-focused system for detecting and classifying household waste using computer vision and a 6DOF robotic hand for automated sorting.',
-    tags: ['OpenCV', 'Robotics', '6DOF Arm', 'Waste Classification'],
+      'Investigating how confidence indicators, verified citations, and uncertainty warnings influence reliance on Generative AI among Bangladeshi users through a multi-condition mixed-method study.',
+    tags: [
+      'Human-Computer Interaction',
+      'Generative AI',
+      'Trust',
+      'Mixed Methods',
+      'User Research',
+    ],
+    active: true,
   },
-
   {
-    title: 'Malware Detection via File Integrity Monitoring',
-    status: 'Research Member',
-    field: 'Cybersecurity · Machine Learning · Threat Detection',
+    title: 'AI Robotic Waste Management System',
+    status: 'Final Year Design Project · 2025–2026',
+    field: 'Computer Vision · YOLOv8n · 6-DOF Robotics',
     description:
-      'A hybrid malware and ransomware detection approach using file integrity monitoring, cryptographic fingerprints, and behaviour-focused detection logic.',
-    tags: ['Cybersecurity', 'SHA-256', 'FIM', 'Ransomware Detection'],
+      'A six-class computer-vision waste detection and robotic sorting system. The YOLOv8n baseline achieved 0.666 mAP50, 0.539 mAP50-95, and 3.85 ms/image test inference, with real-time inference integrated into automated 6-DOF sorting.',
+    tags: [
+      'YOLOv8n',
+      'OpenCV',
+      'Python',
+      '6-DOF Robotics',
+      'Computer Vision',
+    ],
+    active: false,
   },
-
-  {
-    title:
-      'Intelligent Classification of Concealed Household Waste in Polybags Using Computer Vision and Federated Learning',
-    status: 'Under Preparation',
-    field:
-      'Computer Vision · Federated Learning · Sustainable Waste Management',
-    description:
-      'An ongoing research work focused on privacy-aware classification of concealed household waste inside polybags using computer vision and federated learning.',
-    tags: ['Federated Learning', 'Computer Vision', 'Sustainable AI'],
-  },
-
   {
     title:
       'GreenFed-WasteNet: Carbon-Aware Federated Baselines for Imbalanced Multi-Class Waste Classification',
@@ -45,7 +47,7 @@ export const researchItems: ResearchItem[] = [
     field:
       'Federated Learning · Green AI · Computer Vision · Sustainable Computing',
     description:
-      'A carbon-aware waste-classification framework that jointly evaluates predictive performance, class imbalance, open-set uncertainty, federated learning, inference efficiency, and estimated environmental cost across an eight-class dataset of 65,669 images.',
+      'A carbon-aware waste-classification framework evaluating predictive performance, class imbalance, open-set uncertainty, federated learning, inference efficiency, and estimated environmental cost across an eight-class dataset of 65,669 images.',
     tags: [
       'Federated Learning',
       'Green AI',
@@ -56,16 +58,16 @@ export const researchItems: ResearchItem[] = [
     ],
     pdf: '/research/greenfed-wastenet.pdf',
     image: '/images/research/greenfed-wastenet-cover.png',
+    active: false,
   },
-
   {
     title:
       'X-FIBF: Explainable File Integrity Behavioral Fingerprinting and Temporal API-Call Learning for Ransomware Detection',
-    status: 'Research Manuscript',
+    status: 'Research Manuscript · 2024–2025',
     field:
       'Cybersecurity · Explainable AI · Temporal Deep Learning · Ransomware Detection',
     description:
-      'An explainable hybrid ransomware-detection framework combining static PE analysis, temporal API-call learning with MHSA-BiLSTM, attention-based explainability, and safe file-integrity behavioral fingerprinting validated through controlled host and virtual-machine simulations.',
+      'A hybrid ransomware-detection framework combining static PE analysis, temporal API-call learning with MHSA-BiLSTM, attention-based explainability, and safe file-integrity behavioral fingerprinting. The temporal classifier achieved 98.28% accuracy and 99.22% ROC-AUC.',
     tags: [
       'Ransomware Detection',
       'MHSA-BiLSTM',
@@ -76,5 +78,6 @@ export const researchItems: ResearchItem[] = [
     ],
     pdf: '/research/x-fibf-ransomware-detection.pdf',
     image: '/images/research/x-fibf-cover.png',
+    active: false,
   },
 ];
