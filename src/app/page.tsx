@@ -4,6 +4,7 @@ import { CertificationsSection } from '../components/CertificationsSection';
 import { CodingProfiles } from '../components/CodingProfiles';
 import { ContactSection } from '../components/ContactSection';
 import { ExploreMeOn } from '../components/ExploreMeOn';
+import { ExperienceSection } from '../components/ExperienceSection';
 import { FeaturedSpotlight } from '../components/FeaturedSpotlight';
 import { Footer } from '../components/Footer';
 import { Hero } from '../components/Hero';
@@ -54,6 +55,7 @@ export default function Home() {
         </div>
       </section>
 
+      <ExperienceSection />
       <SkillUniverse />
       <CodingProfiles />
       <ProjectsSection />
