@@ -3,6 +3,7 @@ import { BackgroundEffects } from '../components/BackgroundEffects';
 import { CertificationsSection } from '../components/CertificationsSection';
 import { CodingProfiles } from '../components/CodingProfiles';
 import { ContactSection } from '../components/ContactSection';
+import { ExploreMeOn } from '../components/ExploreMeOn';
 import { FeaturedSpotlight } from '../components/FeaturedSpotlight';
 import { Footer } from '../components/Footer';
 import { HardwareLab } from '../components/HardwareLab';
@@ -61,6 +62,7 @@ export default function Home() {
       <AchievementsSection />
       <CertificationsSection />
       <HardwareLab />
+      <ExploreMeOn />
       <ContactSection />
       <Footer />
     </main>
