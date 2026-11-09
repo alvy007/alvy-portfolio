@@ -13,8 +13,8 @@ import { profile } from '../data/profile';
 
 const navItems = [
   { label: 'Toolkit', href: '#toolkit', id: 'toolkit' },
-  { label: 'Story', href: '#story', id: 'story' },
-  { label: 'Skills', href: '#skills', id: 'skills' },
+  { label: 'Education', href: '#education', id: 'education' },
+  { label: 'Experience', href: '#experience', id: 'experience' },
   { label: 'Projects', href: '#projects', id: 'projects' },
   { label: 'Research', href: '#research', id: 'research' },
   { label: 'Contact', href: '#contact', id: 'contact' },
@@ -23,8 +23,8 @@ const navItems = [
 const trackedSections = [
   'home',
   'toolkit',
-  'story',
-  'skills',
+  'education',
+  'experience',
   'projects',
   'research',
   'contact',
