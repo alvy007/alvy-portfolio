@@ -26,6 +26,12 @@ export const profile = {
 
   facebook: 'https://facebook.com/alvy.rahmanar',
 
+  x: 'https://x.com/AlvyRahmanAR',
+
+  instagram: 'https://www.instagram.com/alvy_rahman_ar/',
+
+  portfolio: 'https://alvyrahman-ar.vercel.app/',
+
   cv: '/cv/alvy-rahman-masum-cv.pdf',
 
   image: '/images/profile/alvy.jpg',
