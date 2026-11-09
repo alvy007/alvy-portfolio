@@ -6,7 +6,6 @@ import { ContactSection } from '../components/ContactSection';
 import { ExploreMeOn } from '../components/ExploreMeOn';
 import { FeaturedSpotlight } from '../components/FeaturedSpotlight';
 import { Footer } from '../components/Footer';
-import { HardwareLab } from '../components/HardwareLab';
 import { Hero } from '../components/Hero';
 import { HeroQuote } from '../components/HeroQuote';
 import { Navbar } from '../components/Navbar';
@@ -61,7 +60,6 @@ export default function Home() {
       <ResearchSection />
       <AchievementsSection />
       <CertificationsSection />
-      <HardwareLab />
       <ExploreMeOn />
       <ContactSection />
       <Footer />
