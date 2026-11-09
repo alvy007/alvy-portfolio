@@ -17,12 +17,13 @@ export function AchievementsSection() {
               Achievements
             </p>
             <h2 className="font-[var(--font-space)] text-3xl font-black tracking-tight text-white md:text-5xl">
-              Competitions, recognition, and discipline beyond code.
+              Recognition shaped by competition, leadership, and growth.
             </h2>
           </div>
+
           <p className="max-w-md text-sm leading-6 text-slate-400">
-            A small wall of moments that shaped my confidence, teamwork, and
-            competitive mindset.
+            Milestones across innovation, national programs, and leadership
+            experiences that complement my engineering work.
           </p>
         </div>
 
@@ -35,6 +36,7 @@ export function AchievementsSection() {
               viewport={{ once: true, margin: '-80px' }}
               transition={{ duration: 0.5, delay: index * 0.07 }}
               whileHover={{ y: -8 }}
+              data-cursor-interactive="true"
               className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-6"
             >
               <div className="absolute right-0 top-0 h-28 w-28 translate-x-10 -translate-y-10 rounded-full bg-cyan-300/10 blur-2xl transition group-hover:bg-violet-400/20" />
@@ -43,12 +45,13 @@ export function AchievementsSection() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
                   <Trophy size={22} />
                 </div>
+
                 <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs text-slate-300">
                   {item.year}
                 </span>
               </div>
 
-              <p className="relative font-[var(--font-space)] text-4xl font-black text-white">
+              <p className="relative font-[var(--font-space)] text-3xl font-black text-white">
                 {item.result}
               </p>
 
@@ -60,9 +63,9 @@ export function AchievementsSection() {
                 {item.detail}
               </p>
 
-              <div className="relative mt-5 flex items-center gap-2 text-xs font-semibold text-cyan-200">
+              <div className="relative mt-6 flex items-center gap-2 border-t border-white/[0.07] pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200/70">
                 <Award size={14} />
-                Verified details can be updated with certificates
+                Career milestone
               </div>
             </motion.article>
           ))}

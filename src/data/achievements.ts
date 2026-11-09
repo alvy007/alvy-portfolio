@@ -1,23 +1,23 @@
 export const achievements = [
   {
     title: 'Turtle Venture Business Competition',
-    result: 'Top 5',
+    result: 'Top 5 Finalist',
     detail:
-      'Ranked among the top teams in a nationwide business and innovation challenge.',
+      'Reached the final top five in a competitive business and innovation challenge.',
     year: '2023',
   },
   {
     title: 'GP Future Nation Maker',
-    result: 'Top Participant',
+    result: 'National Recognition',
     detail:
-      'Recognized among top participants in a national technology and entrepreneurship challenge.',
+      'Recognized among top national participants in a technology and future-skills program.',
     year: '2023',
   },
   {
-    title: 'National 10-Ball Pool Championship',
-    result: 'National Round Competitor',
+    title: 'Aspire Leaders Program',
+    result: 'Selected Participant',
     detail:
-      'Qualified for the national round, demonstrating focus, strategy, and discipline under pressure.',
-    year: '2017',
+      'Selected for the 2026 Aspire Leaders Program by Aspire Institute.',
+    year: '2026',
   },
 ];

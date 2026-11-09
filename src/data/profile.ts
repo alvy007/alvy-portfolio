@@ -1,16 +1,16 @@
 export const profile = {
   name: 'Alvy Rahman Masum',
 
-  role: 'Computer Science & Engineering Student',
+  role: 'Computer Science & Engineering Graduate',
 
   title:
-    'AI & Robotics Engineer · Full-Stack Developer · IoT Systems Architect',
+    'Full-Stack Developer · AI & Robotics Engineer · IoT Systems Builder',
 
   headline:
-    'I turn real problems into practical software, IoT, and AI-powered solutions.',
+    'I turn real problems into practical software, AI, robotics, and connected systems.',
 
   shortBio:
-    'CSE student at United International University building solutions across full-stack development, AI robotics, IoT systems, cybersecurity, and computer vision.',
+    'CSE graduate from United International University building across full-stack development, AI and computer vision, robotics, IoT systems, cybersecurity, and applied research.',
 
   location: 'Rampura, Banasree, Dhaka, Bangladesh',
 
