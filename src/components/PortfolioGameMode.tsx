@@ -2,15 +2,11 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  ArrowDown,
   ArrowLeft,
   ArrowRight,
-  Check,
-  Crosshair,
+  ChevronUp,
   Flag,
   Gamepad2,
-  Map,
-  Play,
   RotateCcw,
   Sparkles,
   Trophy,
@@ -18,220 +14,276 @@ import {
   Zap,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { profile } from '../data/profile';
 
-type Mission = {
+type Stage = {
   id: string;
-  title: string;
+  label: string;
   subtitle: string;
-  objective: string;
   xp: number;
 };
 
-const missions: Mission[] = [
-  {
-    id: 'home',
-    title: 'Spawn Point',
-    subtitle: 'Meet the builder',
-    objective: 'Enter the portfolio and meet Alvy.',
-    xp: 50,
-  },
-  {
-    id: 'toolkit',
-    title: 'Loadout',
-    subtitle: 'Unlock the engineering stack',
-    objective: 'Inspect the technologies used to build and ship.',
-    xp: 75,
-  },
-  {
-    id: 'story',
-    title: 'Origin Story',
-    subtitle: 'Problems became products',
-    objective: 'Discover the real problems behind the builds.',
-    xp: 75,
-  },
-  {
-    id: 'education',
-    title: 'Academic Base',
-    subtitle: 'CSE foundation',
-    objective: 'Explore the academic journey and final-year project.',
-    xp: 100,
-  },
-  {
-    id: 'experience',
-    title: 'Field Experience',
-    subtitle: 'Work and internships',
-    objective: 'Review professional work and hands-on internship missions.',
-    xp: 100,
-  },
-  {
-    id: 'skills',
-    title: 'Skill Tree',
-    subtitle: 'What I can build',
-    objective: 'Unlock the four core engineering capability paths.',
-    xp: 100,
-  },
-  {
-    id: 'profiles',
-    title: 'Developer Stats',
-    subtitle: 'Code activity',
-    objective: 'Inspect live coding profiles and problem-solving activity.',
-    xp: 100,
-  },
-  {
-    id: 'projects',
-    title: 'Build Arena',
-    subtitle: 'Real systems',
-    objective: 'Explore software, AI, robotics, IoT, and security projects.',
-    xp: 150,
-  },
-  {
-    id: 'research',
-    title: 'Research Lab',
-    subtitle: 'Investigate and evaluate',
-    objective: 'Enter the research lab and inspect current manuscripts.',
-    xp: 150,
-  },
-  {
-    id: 'achievements',
-    title: 'Trophy Room',
-    subtitle: 'Milestones unlocked',
-    objective: 'Collect the competition and leadership milestones.',
-    xp: 100,
-  },
-  {
-    id: 'certifications',
-    title: 'Credential Vault',
-    subtitle: 'Verified learning',
-    objective: 'Review focused professional credentials.',
-    xp: 75,
-  },
-  {
-    id: 'explore-me',
-    title: 'Social Portal',
-    subtitle: 'Open the network',
-    objective: 'Find the social and developer profile gateways.',
-    xp: 75,
-  },
-  {
-    id: 'contact',
-    title: 'Final Portal',
-    subtitle: 'Start a collaboration',
-    objective: 'Reach the contact portal and complete the quest.',
-    xp: 150,
-  },
+type Platform = {
+  left: number;
+  top: number;
+  width: number;
+};
+
+const stages: Stage[] = [
+  { id: 'home', label: 'Spawn Point', subtitle: 'Meet Alvy', xp: 50 },
+  { id: 'toolkit', label: 'Toolkit', subtitle: 'Engineering stack', xp: 75 },
+  { id: 'story', label: 'Origin Story', subtitle: 'Problems into products', xp: 75 },
+  { id: 'education', label: 'Education', subtitle: 'Academic foundation', xp: 100 },
+  { id: 'experience', label: 'Experience', subtitle: 'Work and internships', xp: 100 },
+  { id: 'skills', label: 'Skill Tree', subtitle: 'What I build', xp: 100 },
+  { id: 'profiles', label: 'Developer Stats', subtitle: 'Code activity', xp: 100 },
+  { id: 'projects', label: 'Projects', subtitle: 'Real systems', xp: 150 },
+  { id: 'research', label: 'Research Lab', subtitle: 'Applied research', xp: 150 },
+  { id: 'achievements', label: 'Achievements', subtitle: 'Milestones', xp: 100 },
+  { id: 'certifications', label: 'Certifications', subtitle: 'Credentials', xp: 75 },
+  { id: 'explore-me', label: 'Social Portal', subtitle: 'Find me online', xp: 75 },
+  { id: 'contact', label: 'Final Portal', subtitle: 'Start a collaboration', xp: 150 },
 ];
 
-const TOTAL_XP = missions.reduce((sum, mission) => sum + mission.xp, 0);
+const TOTAL_XP = stages.reduce((sum, stage) => sum + stage.xp, 0);
+const PLAYER_WIDTH = 58;
+const PLAYER_HEIGHT = 78;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
 export function PortfolioGameMode() {
   const reduceMotion = useReducedMotion();
-  const [active, setActive] = useState(false);
-  const [briefingOpen, setBriefingOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [completed, setCompleted] = useState<string[]>([]);
-  const [currentVisible, setCurrentVisible] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-  const toastTimer = useRef<number | null>(null);
 
-  const currentMission = missions[currentIndex];
+  const [active, setActive] = useState(false);
+  const [introOpen, setIntroOpen] = useState(false);
+  const [stageIndex, setStageIndex] = useState(0);
+  const [completed, setCompleted] = useState<string[]>([]);
+  const [playerProgress, setPlayerProgress] = useState(0.06);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [walking, setWalking] = useState(false);
+  const [jumping, setJumping] = useState(false);
+  const [platform, setPlatform] = useState<Platform>({
+    left: 48,
+    top: 360,
+    width: 720,
+  });
+  const [toast, setToast] = useState<string | null>(null);
+  const [victoryOpen, setVictoryOpen] = useState(false);
+
+  const keysRef = useRef(new Set<string>());
+  const toastTimerRef = useRef<number | null>(null);
+  const jumpTimerRef = useRef<number | null>(null);
+  const transitionLockRef = useRef(false);
+  const lastFrameRef = useRef<number | null>(null);
+
+  const currentStage = stages[stageIndex];
 
   const currentXp = useMemo(
     () =>
-      missions
-        .filter(mission => completed.includes(mission.id))
-        .reduce((sum, mission) => sum + mission.xp, 0),
+      stages
+        .filter(stage => completed.includes(stage.id))
+        .reduce((sum, stage) => sum + stage.xp, 0),
     [completed],
   );
 
-  const progress = Math.round((completed.length / missions.length) * 100);
-  const victory = completed.length === missions.length;
+  const progressPercent = Math.round(
+    (completed.length / stages.length) * 100,
+  );
 
-  const scrollToMission = (index: number) => {
-    const mission = missions[index];
-    const target = document.getElementById(mission.id);
-
-    if (!target) return;
-
-    setCurrentIndex(index);
-
-    target.scrollIntoView({
-      behavior: reduceMotion ? 'auto' : 'smooth',
-      block: 'start',
-    });
-  };
-
-  const goPrevious = () => {
-    scrollToMission(Math.max(0, currentIndex - 1));
-  };
-
-  const goNext = () => {
-    scrollToMission(Math.min(missions.length - 1, currentIndex + 1));
-  };
-
-  const showToast = (message: string) => {
-    if (toastTimer.current) {
-      window.clearTimeout(toastTimer.current);
+  const showToast = useCallback((message: string) => {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
     }
 
     setToast(message);
 
-    toastTimer.current = window.setTimeout(() => {
+    toastTimerRef.current = window.setTimeout(() => {
       setToast(null);
-    }, 1500);
-  };
+    }, 1400);
+  }, []);
 
-  const claimMission = () => {
-    if (!currentVisible) {
-      showToast('Move to the checkpoint first.');
-      return;
-    }
+  const syncPlatform = useCallback(() => {
+    if (!active) return;
 
-    if (completed.includes(currentMission.id)) {
-      showToast('Checkpoint already collected.');
-      return;
-    }
+    const section = document.getElementById(currentStage.id);
+    if (!section) return;
 
-    setCompleted(items => [...items, currentMission.id]);
-    showToast(`+${currentMission.xp} XP · ${currentMission.title} cleared`);
-  };
+    const heading =
+      section.querySelector<HTMLElement>('h1, h2, h3') ??
+      section.querySelector<HTMLElement>('p');
 
-  const startGame = () => {
-    setActive(true);
-    setBriefingOpen(true);
-    setCurrentIndex(0);
-    setCompleted([]);
-    setCurrentVisible(false);
+    if (!heading) return;
 
-    window.requestAnimationFrame(() => {
-      const home = document.getElementById('home');
+    const rect = heading.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-      home?.scrollIntoView({
+    const minWidth = Math.min(520, viewportWidth - 48);
+    const desiredWidth = Math.max(rect.width, minWidth);
+    const maxWidth = viewportWidth - 48;
+    const width = Math.min(desiredWidth, maxWidth);
+
+    const center = clamp(
+      rect.left + rect.width / 2,
+      width / 2 + 24,
+      viewportWidth - width / 2 - 24,
+    );
+
+    const left = center - width / 2;
+    const top = clamp(
+      rect.top - 8,
+      170,
+      viewportHeight - 150,
+    );
+
+    setPlatform({
+      left,
+      top,
+      width,
+    });
+  }, [active, currentStage.id]);
+
+  const scrollToStage = useCallback(
+    (index: number) => {
+      const nextStage = stages[index];
+      const target = document.getElementById(nextStage.id);
+
+      if (!target) return;
+
+      target.scrollIntoView({
         behavior: reduceMotion ? 'auto' : 'smooth',
         block: 'start',
       });
-    });
-  };
 
-  const exitGame = () => {
-    setActive(false);
-    setBriefingOpen(false);
-    setCurrentVisible(false);
-  };
+      window.setTimeout(() => {
+        window.requestAnimationFrame(syncPlatform);
+      }, reduceMotion ? 0 : 520);
+    },
+    [reduceMotion, syncPlatform],
+  );
 
-  const restartGame = () => {
+  const jump = useCallback(() => {
+    if (!active || introOpen || jumping) return;
+
+    setJumping(true);
+
+    if (jumpTimerRef.current) {
+      window.clearTimeout(jumpTimerRef.current);
+    }
+
+    jumpTimerRef.current = window.setTimeout(() => {
+      setJumping(false);
+    }, 460);
+  }, [active, introOpen, jumping]);
+
+  const completeStage = useCallback(
+    (index: number) => {
+      if (transitionLockRef.current) return;
+
+      const stage = stages[index];
+      transitionLockRef.current = true;
+
+      setCompleted(items =>
+        items.includes(stage.id) ? items : [...items, stage.id],
+      );
+
+      showToast(`+${stage.xp} XP · ${stage.label} cleared`);
+
+      if (index === stages.length - 1) {
+        window.setTimeout(() => {
+          setVictoryOpen(true);
+          transitionLockRef.current = false;
+        }, 450);
+        return;
+      }
+
+      window.setTimeout(() => {
+        const nextIndex = index + 1;
+
+        setStageIndex(nextIndex);
+        setPlayerProgress(0.06);
+        setDirection(1);
+        scrollToStage(nextIndex);
+
+        window.setTimeout(() => {
+          transitionLockRef.current = false;
+        }, reduceMotion ? 120 : 650);
+      }, 380);
+    },
+    [reduceMotion, scrollToStage, showToast],
+  );
+
+  const goToPreviousStage = useCallback(() => {
+    if (stageIndex === 0 || transitionLockRef.current) return;
+
+    transitionLockRef.current = true;
+    const previousIndex = stageIndex - 1;
+
+    setStageIndex(previousIndex);
+    setPlayerProgress(0.9);
+    setDirection(-1);
+    scrollToStage(previousIndex);
+
+    window.setTimeout(() => {
+      transitionLockRef.current = false;
+    }, reduceMotion ? 120 : 650);
+  }, [reduceMotion, scrollToStage, stageIndex]);
+
+  const startGame = useCallback(() => {
+    setActive(true);
+    setIntroOpen(true);
+    setVictoryOpen(false);
+    setStageIndex(0);
     setCompleted([]);
-    setCurrentIndex(0);
-    setBriefingOpen(false);
+    setPlayerProgress(0.06);
+    setDirection(1);
+    setWalking(false);
+    setJumping(false);
 
-    const home = document.getElementById('home');
+    window.requestAnimationFrame(() => {
+      document.getElementById('home')?.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
 
-    home?.scrollIntoView({
-      behavior: reduceMotion ? 'auto' : 'smooth',
-      block: 'start',
+      window.setTimeout(() => {
+        window.requestAnimationFrame(syncPlatform);
+      }, reduceMotion ? 0 : 450);
     });
-  };
+  }, [reduceMotion, syncPlatform]);
+
+  const exitGame = useCallback(() => {
+    keysRef.current.clear();
+    setWalking(false);
+    setActive(false);
+    setIntroOpen(false);
+    setVictoryOpen(false);
+    setJumping(false);
+  }, []);
+
+  const restartGame = useCallback(() => {
+    transitionLockRef.current = false;
+    setCompleted([]);
+    setStageIndex(0);
+    setPlayerProgress(0.06);
+    setDirection(1);
+    setWalking(false);
+    setJumping(false);
+    setVictoryOpen(false);
+
+    window.requestAnimationFrame(() => {
+      scrollToStage(0);
+    });
+  }, [scrollToStage]);
 
   useEffect(() => {
     const handleExternalLaunch = () => {
@@ -243,38 +295,35 @@ export function PortfolioGameMode() {
     return () => {
       window.removeEventListener('portfolio-quest:start', handleExternalLaunch);
     };
-  });
+  }, [startGame]);
 
   useEffect(() => {
-    if (!active || briefingOpen) return;
+    if (!active) return;
 
-    const target = document.getElementById(currentMission.id);
+    const handleViewportChange = () => {
+      window.requestAnimationFrame(syncPlatform);
+    };
 
-    if (!target) return;
+    window.addEventListener('scroll', handleViewportChange, { passive: true });
+    window.addEventListener('resize', handleViewportChange);
 
-    const observer = new IntersectionObserver(
-      entries => {
-        const entry = entries[0];
-
-        setCurrentVisible(
-          Boolean(entry?.isIntersecting && entry.intersectionRatio >= 0.18),
-        );
-      },
-      {
-        threshold: [0, 0.18, 0.35, 0.6],
-        rootMargin: '-12% 0px -18% 0px',
-      },
-    );
-
-    observer.observe(target);
+    window.requestAnimationFrame(syncPlatform);
 
     return () => {
-      observer.disconnect();
+      window.removeEventListener('scroll', handleViewportChange);
+      window.removeEventListener('resize', handleViewportChange);
     };
-  }, [active, briefingOpen, currentMission.id]);
+  }, [active, syncPlatform]);
 
   useEffect(() => {
-    if (!active || briefingOpen) return;
+    if (!active || introOpen || victoryOpen) return;
+
+    const movementKeys = new Set([
+      'a',
+      'd',
+      'arrowleft',
+      'arrowright',
+    ]);
 
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target;
@@ -287,51 +336,135 @@ export function PortfolioGameMode() {
         return;
       }
 
-      if (event.key === 'Escape') {
+      const key = event.key.toLowerCase();
+
+      if (key === 'escape') {
+        event.preventDefault();
         exitGame();
         return;
       }
 
-      if (
-        event.key === 'ArrowRight' ||
-        event.key.toLowerCase() === 'd' ||
-        event.key.toLowerCase() === 's'
-      ) {
+      if (key === 'w' || key === 'arrowup' || key === ' ') {
         event.preventDefault();
-        goNext();
+        jump();
         return;
       }
 
-      if (
-        event.key === 'ArrowLeft' ||
-        event.key.toLowerCase() === 'a' ||
-        event.key.toLowerCase() === 'w'
-      ) {
+      if (movementKeys.has(key)) {
         event.preventDefault();
-        goPrevious();
-        return;
+        keysRef.current.add(key);
       }
+    };
 
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        claimMission();
-      }
+    const handleKeyUp = (event: KeyboardEvent) => {
+      keysRef.current.delete(event.key.toLowerCase());
     };
 
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      keysRef.current.clear();
     };
-  });
+  }, [active, exitGame, introOpen, jump, victoryOpen]);
+
+  useEffect(() => {
+    if (!active || introOpen || victoryOpen) return;
+
+    let rafId = 0;
+
+    const frame = (time: number) => {
+      const previous = lastFrameRef.current ?? time;
+      const delta = Math.min((time - previous) / 1000, 0.04);
+      lastFrameRef.current = time;
+
+      const keys = keysRef.current;
+      const movingRight =
+        keys.has('d') || keys.has('arrowright');
+      const movingLeft =
+        keys.has('a') || keys.has('arrowleft');
+
+      const movement = movingRight === movingLeft
+        ? 0
+        : movingRight
+          ? 1
+          : -1;
+
+      setWalking(Boolean(movement));
+
+      if (movement !== 0 && !transitionLockRef.current) {
+        setDirection(movement as 1 | -1);
+
+        setPlayerProgress(previousProgress => {
+          const next = clamp(
+            previousProgress + movement * delta * 0.42,
+            0.035,
+            0.965,
+          );
+
+          if (movement > 0 && next >= 0.935) {
+            window.requestAnimationFrame(() => {
+              completeStage(stageIndex);
+            });
+          }
+
+          if (movement < 0 && next <= 0.045 && stageIndex > 0) {
+            window.requestAnimationFrame(goToPreviousStage);
+          }
+
+          return next;
+        });
+      }
+
+      rafId = window.requestAnimationFrame(frame);
+    };
+
+    rafId = window.requestAnimationFrame(frame);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      lastFrameRef.current = null;
+      setWalking(false);
+    };
+  }, [
+    active,
+    completeStage,
+    goToPreviousStage,
+    introOpen,
+    stageIndex,
+    victoryOpen,
+  ]);
 
   useEffect(() => {
     return () => {
-      if (toastTimer.current) {
-        window.clearTimeout(toastTimer.current);
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+
+      if (jumpTimerRef.current) {
+        window.clearTimeout(jumpTimerRef.current);
       }
     };
   }, []);
+
+  const playerLeft =
+    platform.left + platform.width * playerProgress - PLAYER_WIDTH / 2;
+
+  const playerTop = platform.top - PLAYER_HEIGHT + 2;
+
+  const handlePressStart = (key: 'left' | 'right') => {
+    if (!active || introOpen || victoryOpen) return;
+
+    const mappedKey = key === 'left' ? 'arrowleft' : 'arrowright';
+    keysRef.current.add(mappedKey);
+  };
+
+  const handlePressEnd = (key: 'left' | 'right') => {
+    const mappedKey = key === 'left' ? 'arrowleft' : 'arrowright';
+    keysRef.current.delete(mappedKey);
+  };
 
   return (
     <>
@@ -344,17 +477,16 @@ export function PortfolioGameMode() {
           whileHover={{ y: -4, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           data-cursor-interactive="true"
-          className="fixed bottom-5 right-4 z-[70] flex items-center gap-3 rounded-full border border-cyan-300/20 bg-[#07101d]/92 px-4 py-3 text-sm font-bold text-white shadow-[0_18px_60px_rgba(0,0,0,0.42)] backdrop-blur-2xl sm:bottom-7 sm:right-7 sm:px-5"
+          className="fixed bottom-5 right-4 z-[70] hidden items-center gap-3 rounded-full border border-cyan-300/20 bg-[#07101d]/92 px-4 py-3 text-sm font-bold text-white shadow-[0_18px_60px_rgba(0,0,0,0.42)] backdrop-blur-2xl xl:flex"
           aria-label="Start Portfolio Quest game mode"
         >
-          <span className="relative flex h-10 w-10 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200">
-            <span className="absolute inset-1 rounded-full border border-violet-300/10" />
-            <Gamepad2 size={19} className="relative" />
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200">
+            <Gamepad2 size={19} />
           </span>
 
           <span className="text-left">
             <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-cyan-300">
-              Optional Mode
+              Side-Scroller
             </span>
             <span className="mt-0.5 block">Play Portfolio Quest</span>
           </span>
@@ -364,225 +496,253 @@ export function PortfolioGameMode() {
       <AnimatePresence>
         {active && (
           <>
+            <div className="pointer-events-none fixed inset-0 z-[58]">
+              <div className="absolute inset-x-0 top-[92px] h-px bg-gradient-to-r from-transparent via-cyan-300/10 to-transparent" />
+
+              <motion.div
+                animate={{
+                  left: platform.left,
+                  top: platform.top,
+                  width: platform.width,
+                }}
+                transition={{
+                  duration: reduceMotion ? 0 : 0.28,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="absolute h-[4px] rounded-full bg-gradient-to-r from-cyan-300/25 via-cyan-200/70 to-violet-300/35 shadow-[0_0_22px_rgba(34,211,238,0.22)]"
+              >
+                <div className="absolute inset-x-0 top-[4px] h-[2px] bg-white/[0.035]" />
+
+                <div className="absolute left-0 top-[-5px] h-3 w-3 rounded-full border border-cyan-200/40 bg-[#06111e]" />
+
+                <motion.div
+                  animate={
+                    reduceMotion
+                      ? undefined
+                      : {
+                          y: [0, -6, 0],
+                          rotate: [0, -5, 5, 0],
+                        }
+                  }
+                  transition={{
+                    duration: 1.25,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                  className="absolute right-[-5px] top-[-42px] flex flex-col items-center"
+                >
+                  <Flag size={28} className="text-violet-200" />
+                  <span className="mt-1 rounded-full border border-violet-300/15 bg-[#07101d]/90 px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-violet-100">
+                    Goal
+                  </span>
+                </motion.div>
+              </motion.div>
+            </div>
+
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="pointer-events-none fixed inset-0 z-[58]"
+              animate={{
+                left: playerLeft,
+                top: playerTop,
+                y: jumping ? -78 : walking && !reduceMotion ? [0, -2, 0] : 0,
+                rotate: jumping
+                  ? direction * 7
+                  : walking
+                    ? direction * 2
+                    : 0,
+              }}
+              transition={{
+                left: {
+                  duration: 0.04,
+                  ease: 'linear',
+                },
+                top: {
+                  duration: reduceMotion ? 0 : 0.28,
+                  ease: [0.22, 1, 0.36, 1],
+                },
+                y: jumping
+                  ? {
+                      duration: 0.46,
+                      ease: [0.2, 0.85, 0.35, 1],
+                    }
+                  : walking && !reduceMotion
+                    ? {
+                        duration: 0.22,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }
+                    : {
+                        duration: 0.15,
+                      },
+                rotate: {
+                  duration: 0.16,
+                },
+              }}
+              className="pointer-events-none fixed z-[68] h-[78px] w-[58px]"
+              style={{
+                transformOrigin: '50% 100%',
+              }}
               aria-hidden="true"
             >
-              <div className="absolute inset-3 rounded-[2rem] border border-cyan-300/[0.08] sm:inset-5" />
-
-              <div className="absolute left-4 top-4 h-10 w-10 border-l border-t border-cyan-300/30 sm:left-7 sm:top-7" />
-              <div className="absolute right-4 top-4 h-10 w-10 border-r border-t border-violet-300/30 sm:right-7 sm:top-7" />
-              <div className="absolute bottom-4 left-4 h-10 w-10 border-b border-l border-violet-300/25 sm:bottom-7 sm:left-7" />
-              <div className="absolute bottom-4 right-4 h-10 w-10 border-b border-r border-cyan-300/25 sm:bottom-7 sm:right-7" />
-
-              <div className="absolute inset-x-0 top-[88px] h-px bg-gradient-to-r from-transparent via-cyan-300/15 to-transparent" />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: -16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              className="fixed left-3 right-3 top-[84px] z-[65] mx-auto max-w-5xl rounded-2xl border border-white/[0.08] bg-[#07101d]/88 px-3 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.35)] backdrop-blur-2xl sm:left-5 sm:right-5 sm:px-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06]">
+              <div
+                className="relative h-full w-full"
+                style={{
+                  transform:
+                    direction === -1 ? 'scaleX(-1)' : 'scaleX(1)',
+                }}
+              >
+                <motion.div
+                  animate={
+                    walking && !jumping && !reduceMotion
+                      ? { y: [0, -1.5, 0] }
+                      : { y: 0 }
+                  }
+                  transition={{
+                    duration: 0.22,
+                    repeat: walking ? Infinity : 0,
+                  }}
+                  className="absolute left-1/2 top-0 h-[46px] w-[46px] -translate-x-1/2 overflow-hidden rounded-[15px] border-2 border-cyan-200/50 bg-[#07101d] shadow-[0_8px_28px_rgba(34,211,238,0.28)]"
+                >
                   <Image
                     src={profile.image}
-                    alt={profile.name}
+                    alt=""
                     fill
-                    sizes="44px"
+                    sizes="46px"
                     className="object-cover"
+                    priority
                   />
+                </motion.div>
+
+                <div className="absolute left-1/2 top-[42px] h-[25px] w-[30px] -translate-x-1/2 rounded-[7px_7px_5px_5px] border border-cyan-200/25 bg-gradient-to-b from-cyan-300 to-sky-500 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+                  <div className="absolute left-[5px] top-[6px] h-[8px] w-[4px] rounded-full bg-white/55" />
+                  <div className="absolute right-[5px] top-[6px] h-[8px] w-[4px] rounded-full bg-white/55" />
                 </div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-black uppercase tracking-[0.16em] text-white sm:text-sm">
-                        Portfolio Quest
-                      </p>
+                <motion.div
+                  animate={
+                    walking && !jumping && !reduceMotion
+                      ? { rotate: [22, -22, 22] }
+                      : { rotate: 0 }
+                  }
+                  transition={{
+                    duration: 0.28,
+                    repeat: walking ? Infinity : 0,
+                    ease: 'linear',
+                  }}
+                  className="absolute bottom-0 left-[16px] h-[17px] w-[7px] origin-top rounded-full bg-violet-300"
+                />
 
-                      <p className="mt-0.5 truncate text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:text-[10px]">
-                        Level {currentIndex + 1}/{missions.length} · {currentMission.title}
-                      </p>
-                    </div>
+                <motion.div
+                  animate={
+                    walking && !jumping && !reduceMotion
+                      ? { rotate: [-22, 22, -22] }
+                      : { rotate: 0 }
+                  }
+                  transition={{
+                    duration: 0.28,
+                    repeat: walking ? Infinity : 0,
+                    ease: 'linear',
+                  }}
+                  className="absolute bottom-0 right-[16px] h-[17px] w-[7px] origin-top rounded-full bg-cyan-200"
+                />
 
-                    <div className="hidden items-center gap-2 sm:flex">
-                      <span className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-200">
-                        {currentXp}/{TOTAL_XP} XP
-                      </span>
-
-                      <span className="rounded-full border border-violet-300/15 bg-violet-300/[0.06] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200">
-                        {progress}%
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.07]">
-                    <motion.div
-                      animate={{ width: `${progress}%` }}
-                      transition={{ duration: 0.45 }}
-                      className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-400"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={exitGame}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-400 transition hover:border-red-300/25 hover:bg-red-400/[0.07] hover:text-red-200"
-                  aria-label="Exit game mode"
-                >
-                  <X size={17} />
-                </button>
+                {jumping && (
+                  <motion.div
+                    initial={{ opacity: 0.8, scale: 0.6 }}
+                    animate={{ opacity: 0, scale: 1.8 }}
+                    transition={{ duration: 0.4 }}
+                    className="absolute bottom-[-3px] left-1/2 h-5 w-10 -translate-x-1/2 rounded-full border border-cyan-200/30"
+                  />
+                )}
               </div>
             </motion.div>
-
-            <motion.aside
-              initial={{ opacity: 0, x: 18 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 18 }}
-              className="fixed right-4 top-[162px] z-[64] hidden w-[270px] rounded-3xl border border-white/[0.08] bg-[#07101d]/86 p-4 shadow-[0_22px_65px_rgba(0,0,0,0.38)] backdrop-blur-2xl xl:block"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-cyan-200">
-                  <Map size={15} />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-                    Quest Map
-                  </span>
-                </div>
-
-                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-600">
-                  {completed.length}/{missions.length}
-                </span>
-              </div>
-
-              <div className="mt-4 max-h-[52vh] space-y-1 overflow-y-auto pr-1">
-                {missions.map((mission, index) => {
-                  const done = completed.includes(mission.id);
-                  const current = index === currentIndex;
-
-                  return (
-                    <button
-                      key={mission.id}
-                      type="button"
-                      onClick={() => scrollToMission(index)}
-                      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition ${
-                        current
-                          ? 'bg-cyan-300/[0.08] text-white'
-                          : 'text-slate-500 hover:bg-white/[0.035] hover:text-slate-300'
-                      }`}
-                    >
-                      <span
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[9px] font-black ${
-                          done
-                            ? 'border-emerald-300/25 bg-emerald-300/[0.08] text-emerald-200'
-                            : current
-                              ? 'border-cyan-300/25 bg-cyan-300/[0.08] text-cyan-200'
-                              : 'border-white/[0.08] bg-white/[0.025] text-slate-600'
-                        }`}
-                      >
-                        {done ? <Check size={13} /> : String(index + 1).padStart(2, '0')}
-                      </span>
-
-                      <span className="min-w-0">
-                        <span className="block truncate text-[11px] font-bold">
-                          {mission.title}
-                        </span>
-                        <span className="mt-0.5 block truncate text-[9px] uppercase tracking-[0.12em] opacity-60">
-                          {mission.subtitle}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.aside>
 
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: -14 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 24 }}
-              className="fixed bottom-3 left-3 right-3 z-[66] mx-auto max-w-3xl rounded-[1.65rem] border border-white/[0.09] bg-[#07101d]/92 p-3 shadow-[0_24px_70px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:bottom-5 sm:left-5 sm:right-5 sm:p-4"
+              className="fixed left-3 right-3 top-[84px] z-[69] mx-auto flex max-w-3xl items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#07101d]/88 px-3 py-3 shadow-[0_16px_50px_rgba(0,0,0,0.32)] backdrop-blur-2xl sm:left-5 sm:right-5 sm:px-4"
             >
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={goPrevious}
-                  disabled={currentIndex === 0}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:border-cyan-300/25 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-25"
-                  aria-label="Previous mission"
-                >
-                  <ArrowLeft size={17} />
-                </button>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/15 bg-cyan-300/[0.06] text-cyan-200">
+                <Gamepad2 size={17} />
+              </div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Crosshair
-                      size={14}
-                      className={currentVisible ? 'text-emerald-300' : 'text-slate-600'}
-                    />
-
-                    <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">
-                      {currentMission.title}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200 sm:text-xs">
+                      Stage {stageIndex + 1}/{stages.length} · {currentStage.label}
                     </p>
-
-                    <span
-                      className={`ml-auto hidden rounded-full px-2 py-1 text-[8px] font-black uppercase tracking-[0.13em] sm:inline-flex ${
-                        currentVisible
-                          ? 'bg-emerald-300/[0.08] text-emerald-200'
-                          : 'bg-white/[0.04] text-slate-600'
-                      }`}
-                    >
-                      {currentVisible ? 'Core in range' : 'Find checkpoint'}
-                    </span>
+                    <p className="mt-0.5 truncate text-[9px] uppercase tracking-[0.14em] text-slate-500">
+                      {currentStage.subtitle}
+                    </p>
                   </div>
 
-                  <p className="mt-1 hidden truncate text-xs text-slate-500 sm:block">
-                    {currentMission.objective}
-                  </p>
+                  <div className="hidden items-center gap-2 sm:flex">
+                    <span className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.13em] text-cyan-100">
+                      {currentXp}/{TOTAL_XP} XP
+                    </span>
+                    <span className="rounded-full border border-violet-300/15 bg-violet-300/[0.06] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.13em] text-violet-100">
+                      {progressPercent}%
+                    </span>
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={claimMission}
-                  disabled={!currentVisible || completed.includes(currentMission.id)}
-                  className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-3 text-xs font-black uppercase tracking-[0.11em] text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-white/[0.07] disabled:text-slate-600 sm:px-4"
-                >
-                  {completed.includes(currentMission.id) ? (
-                    <>
-                      <Check size={15} />
-                      <span className="hidden sm:inline">Collected</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap size={15} />
-                      <span className="hidden sm:inline">Collect +{currentMission.xp}</span>
-                      <span className="sm:hidden">+{currentMission.xp}</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={goNext}
-                  disabled={currentIndex === missions.length - 1}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:border-cyan-300/25 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-25"
-                  aria-label="Next mission"
-                >
-                  <ArrowRight size={17} />
-                </button>
+                <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+                  <motion.div
+                    animate={{ width: `${progressPercent}%` }}
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-400"
+                  />
+                </div>
               </div>
 
-              <div className="mt-3 hidden items-center justify-between border-t border-white/[0.06] pt-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-600 sm:flex">
-                <span>W/A or ← Previous</span>
-                <span>Enter / Space Collect</span>
-                <span>S/D or → Next</span>
-              </div>
+              <button
+                type="button"
+                onClick={exitGame}
+                aria-label="Exit game mode"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-slate-400 transition hover:border-red-300/20 hover:bg-red-300/[0.05] hover:text-red-200"
+              >
+                <X size={16} />
+              </button>
             </motion.div>
+
+            <div className="fixed bottom-4 left-1/2 z-[70] flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-white/[0.08] bg-[#07101d]/90 p-2 shadow-[0_18px_55px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:bottom-5">
+              <button
+                type="button"
+                onPointerDown={() => handlePressStart('left')}
+                onPointerUp={() => handlePressEnd('left')}
+                onPointerLeave={() => handlePressEnd('left')}
+                onPointerCancel={() => handlePressEnd('left')}
+                aria-label="Move left"
+                className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-200 transition hover:border-cyan-300/25 hover:text-cyan-200"
+              >
+                <ArrowLeft size={20} />
+              </button>
+
+              <button
+                type="button"
+                onClick={jump}
+                aria-label="Jump"
+                className="flex h-12 min-w-[66px] items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 text-xs font-black uppercase tracking-[0.1em] text-slate-950 transition hover:bg-cyan-200"
+              >
+                <ChevronUp size={18} />
+                Jump
+              </button>
+
+              <button
+                type="button"
+                onPointerDown={() => handlePressStart('right')}
+                onPointerUp={() => handlePressEnd('right')}
+                onPointerLeave={() => handlePressEnd('right')}
+                onPointerCancel={() => handlePressEnd('right')}
+                aria-label="Move right"
+                className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-200 transition hover:border-cyan-300/25 hover:text-cyan-200"
+              >
+                <ArrowRight size={20} />
+              </button>
+            </div>
+
+            <div className="pointer-events-none fixed bottom-[86px] left-1/2 z-[69] hidden -translate-x-1/2 rounded-full border border-white/[0.07] bg-[#07101d]/75 px-4 py-2 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-500 backdrop-blur-xl md:block">
+              A / D or ← / → to walk · W / ↑ / Space to jump
+            </div>
 
             <AnimatePresence>
               {toast && (
@@ -590,7 +750,7 @@ export function PortfolioGameMode() {
                   initial={{ opacity: 0, y: 12, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.96 }}
-                  className="fixed bottom-24 left-1/2 z-[72] -translate-x-1/2 rounded-full border border-cyan-300/15 bg-[#07101d]/95 px-4 py-2 text-center text-xs font-bold text-cyan-100 shadow-[0_16px_45px_rgba(0,0,0,0.42)] backdrop-blur-xl sm:bottom-32"
+                  className="fixed bottom-28 left-1/2 z-[74] -translate-x-1/2 rounded-full border border-cyan-300/15 bg-[#07101d]/95 px-4 py-2 text-center text-xs font-bold text-cyan-100 shadow-[0_16px_45px_rgba(0,0,0,0.42)] backdrop-blur-xl"
                 >
                   {toast}
                 </motion.div>
@@ -598,103 +758,103 @@ export function PortfolioGameMode() {
             </AnimatePresence>
 
             <AnimatePresence>
-              {briefingOpen && (
+              {introOpen && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[75] flex items-center justify-center bg-[#030712]/78 px-4 py-24 backdrop-blur-xl"
+                  className="fixed inset-0 z-[76] flex items-center justify-center bg-[#030712]/80 px-4 py-20 backdrop-blur-xl"
                 >
                   <motion.div
                     initial={{ opacity: 0, y: 24, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 18, scale: 0.97 }}
-                    className="w-full max-w-2xl overflow-hidden rounded-[2rem] border border-cyan-300/[0.14] bg-[#07101d] shadow-[0_30px_100px_rgba(0,0,0,0.55)]"
+                    exit={{ opacity: 0, y: 16, scale: 0.97 }}
+                    className="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-cyan-300/[0.14] bg-[#07101d] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.55)] sm:p-8"
                   >
-                    <div className="relative overflow-hidden p-6 sm:p-8">
-                      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-300/[0.08] blur-[80px]" />
-                      <div className="pointer-events-none absolute -bottom-28 -left-24 h-64 w-64 rounded-full bg-violet-500/[0.08] blur-[90px]" />
+                    <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-300/[0.08] blur-[85px]" />
+                    <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-violet-500/[0.08] blur-[90px]" />
 
-                      <div className="relative">
-                        <div className="flex items-center gap-4">
-                          <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-cyan-300/25">
-                            <Image
-                              src={profile.image}
-                              alt={profile.name}
-                              fill
-                              sizes="64px"
-                              className="object-cover"
-                            />
-                          </div>
-
-                          <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-300">
-                              Mission Briefing
-                            </p>
-
-                            <h2 className="mt-1 font-[var(--font-space)] text-2xl font-black text-white sm:text-3xl">
-                              Portfolio Quest
-                            </h2>
-                          </div>
-                        </div>
-
-                        <p className="mt-6 text-sm leading-7 text-slate-300 sm:text-base">
-                          Explore the real portfolio as a guided game. Move through
-                          each checkpoint, inspect the actual section, then collect
-                          its energy core to earn XP. Finish all checkpoints to
-                          unlock the final quest completion screen.
-                        </p>
-
-                        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                          {[
-                            ['13', 'Checkpoints'],
-                            [String(TOTAL_XP), 'Total XP'],
-                            ['1', 'Full Portfolio'],
-                          ].map(([value, label]) => (
-                            <div
-                              key={label}
-                              className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4"
-                            >
-                              <p className="font-[var(--font-space)] text-2xl font-black text-white">
-                                {value}
-                              </p>
-                              <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                                {label}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-cyan-300/[0.1] bg-cyan-300/[0.04] p-4">
-                          <Gamepad2
-                            size={18}
-                            className="mt-0.5 shrink-0 text-cyan-200"
+                    <div className="relative">
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-cyan-300/25">
+                          <Image
+                            src={profile.image}
+                            alt={profile.name}
+                            fill
+                            sizes="64px"
+                            className="object-cover"
                           />
-                          <p className="text-xs leading-6 text-slate-400">
-                            Desktop: use W/A or ← for previous, S/D or → for next,
-                            and Enter/Space to collect. Mobile: use the on-screen
-                            controls. Normal scrolling still works.
+                        </div>
+
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-300">
+                            Side-Scroller Mode
                           </p>
+                          <h2 className="mt-1 font-[var(--font-space)] text-2xl font-black text-white sm:text-3xl">
+                            Walk across the portfolio.
+                          </h2>
                         </div>
+                      </div>
 
-                        <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                          <button
-                            type="button"
-                            onClick={() => setBriefingOpen(false)}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-cyan-300 px-5 py-3.5 text-sm font-black text-slate-950 transition hover:bg-cyan-200"
-                          >
-                            <Play size={17} />
-                            Enter the Quest
-                          </button>
+                      <p className="mt-6 text-sm leading-7 text-slate-300 sm:text-base">
+                        Your mini Alvy avatar will land on each portfolio
+                        section heading. Walk across the text, jump while you
+                        move, and reach the flag on the right to unlock the next
+                        section.
+                      </p>
 
-                          <button
-                            type="button"
-                            onClick={exitGame}
-                            className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.035] px-5 py-3.5 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white"
+                      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                        {[
+                          ['A / D', 'Walk'],
+                          ['W / Space', 'Jump'],
+                          [String(stages.length), 'Stages'],
+                        ].map(([value, label]) => (
+                          <div
+                            key={label}
+                            className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4"
                           >
-                            Continue Normal Mode
-                          </button>
-                        </div>
+                            <p className="font-[var(--font-space)] text-xl font-black text-white">
+                              {value}
+                            </p>
+                            <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                              {label}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-6 flex gap-3 rounded-2xl border border-violet-300/[0.1] bg-violet-300/[0.04] p-4">
+                        <Sparkles
+                          size={18}
+                          className="mt-0.5 shrink-0 text-violet-200"
+                        />
+                        <p className="text-xs leading-6 text-slate-400">
+                          This uses the real portfolio as the game world. No
+                          duplicate pages. Each real heading becomes your next
+                          platform.
+                        </p>
+                      </div>
+
+                      <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIntroOpen(false);
+                            window.requestAnimationFrame(syncPlatform);
+                          }}
+                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-cyan-300 px-5 py-3.5 text-sm font-black text-slate-950 transition hover:bg-cyan-200"
+                        >
+                          <Gamepad2 size={17} />
+                          Start Walking
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={exitGame}
+                          className="inline-flex items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.035] px-5 py-3.5 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white"
+                        >
+                          Continue Normal Mode
+                        </button>
                       </div>
                     </div>
                   </motion.div>
@@ -703,15 +863,15 @@ export function PortfolioGameMode() {
             </AnimatePresence>
 
             <AnimatePresence>
-              {victory && !briefingOpen && (
+              {victoryOpen && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[74] flex items-center justify-center bg-[#030712]/72 px-4 py-24 backdrop-blur-xl"
+                  className="fixed inset-0 z-[77] flex items-center justify-center bg-[#030712]/76 px-4 py-20 backdrop-blur-xl"
                 >
                   <motion.div
-                    initial={{ opacity: 0, y: 24, scale: 0.94 }}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-cyan-300/[0.15] bg-[#07101d] p-7 text-center shadow-[0_30px_100px_rgba(0,0,0,0.55)] sm:p-9"
                   >
@@ -719,11 +879,15 @@ export function PortfolioGameMode() {
 
                     <div className="relative">
                       <motion.div
-                        animate={reduceMotion ? undefined : { rotate: [0, -8, 8, 0] }}
+                        animate={
+                          reduceMotion
+                            ? undefined
+                            : { y: [0, -8, 0], rotate: [0, -4, 4, 0] }
+                        }
                         transition={{
                           duration: 1.4,
                           repeat: Infinity,
-                          repeatDelay: 1.2,
+                          repeatDelay: 0.8,
                         }}
                         className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.7rem] border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200"
                       >
@@ -731,31 +895,17 @@ export function PortfolioGameMode() {
                       </motion.div>
 
                       <p className="mt-6 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
-                        Quest Complete
+                        Full Run Complete
                       </p>
 
                       <h2 className="mt-2 font-[var(--font-space)] text-3xl font-black text-white sm:text-4xl">
-                        You explored the full portfolio.
+                        You walked through the entire portfolio.
                       </h2>
 
                       <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400">
-                        All {missions.length} checkpoints cleared and {TOTAL_XP} XP
-                        collected. You have seen the stack, education, experience,
-                        projects, research, achievements, profiles, and contact
-                        portal.
+                        All {stages.length} stages cleared and {TOTAL_XP} XP
+                        collected.
                       </p>
-
-                      <div className="mt-7 flex items-center justify-center gap-3">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-300/[0.06] px-4 py-2 text-xs font-bold text-emerald-200">
-                          <Flag size={14} />
-                          {TOTAL_XP} XP
-                        </span>
-
-                        <span className="inline-flex items-center gap-2 rounded-full border border-violet-300/15 bg-violet-300/[0.06] px-4 py-2 text-xs font-bold text-violet-200">
-                          <Sparkles size={14} />
-                          100% Explored
-                        </span>
-                      </div>
 
                       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                         <button
@@ -764,7 +914,7 @@ export function PortfolioGameMode() {
                           className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-5 py-3.5 text-sm font-semibold text-white transition hover:border-cyan-300/20 hover:bg-white/[0.07]"
                         >
                           <RotateCcw size={16} />
-                          Replay Quest
+                          Replay
                         </button>
 
                         <button
@@ -772,8 +922,8 @@ export function PortfolioGameMode() {
                           onClick={exitGame}
                           className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-cyan-300 px-5 py-3.5 text-sm font-black text-slate-950 transition hover:bg-cyan-200"
                         >
-                          <ArrowDown size={16} />
-                          Continue Portfolio
+                          <Zap size={16} />
+                          Back to Portfolio
                         </button>
                       </div>
                     </div>
