@@ -3,6 +3,7 @@ import { BackgroundEffects } from '../components/BackgroundEffects';
 import { CertificationsSection } from '../components/CertificationsSection';
 import { CodingProfiles } from '../components/CodingProfiles';
 import { ContactSection } from '../components/ContactSection';
+import { EducationSection } from '../components/EducationSection';
 import { ExploreMeOn } from '../components/ExploreMeOn';
 import { ExperienceSection } from '../components/ExperienceSection';
 import { FeaturedSpotlight } from '../components/FeaturedSpotlight';
@@ -55,6 +56,7 @@ export default function Home() {
         </div>
       </section>
 
+      <EducationSection />
       <ExperienceSection />
       <SkillUniverse />
       <CodingProfiles />
