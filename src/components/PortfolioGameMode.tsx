@@ -2,288 +2,698 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  ArrowLeft,
-  ArrowRight,
-  ChevronUp,
-  Flag,
+  Flame,
   Gamepad2,
-  RotateCcw,
-  Sparkles,
-  Trophy,
+  Keyboard,
+  MousePointer2,
   X,
-  Zap,
 } from 'lucide-react';
-import Image from 'next/image';
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
-import { profile } from '../data/profile';
 
-type Stage = {
-  id: string;
-  label: string;
-  subtitle: string;
-  xp: number;
-};
+const DRAGON_HEIGHT = 96;
+const SPIKE_BOTTOM = 122;
 
-type Platform = {
-  left: number;
-  top: number;
-  width: number;
-};
-
-const stages: Stage[] = [
-  { id: 'home', label: 'Spawn Point', subtitle: 'Meet Alvy', xp: 50 },
-  { id: 'toolkit', label: 'Toolkit', subtitle: 'Engineering stack', xp: 75 },
-  { id: 'story', label: 'Origin Story', subtitle: 'Problems into products', xp: 75 },
-  { id: 'education', label: 'Education', subtitle: 'Academic foundation', xp: 100 },
-  { id: 'experience', label: 'Experience', subtitle: 'Work and internships', xp: 100 },
-  { id: 'skills', label: 'Skill Tree', subtitle: 'What I build', xp: 100 },
-  { id: 'profiles', label: 'Developer Stats', subtitle: 'Code activity', xp: 100 },
-  { id: 'projects', label: 'Projects', subtitle: 'Real systems', xp: 150 },
-  { id: 'research', label: 'Research Lab', subtitle: 'Applied research', xp: 150 },
-  { id: 'achievements', label: 'Achievements', subtitle: 'Milestones', xp: 100 },
-  { id: 'certifications', label: 'Certifications', subtitle: 'Credentials', xp: 75 },
-  { id: 'explore-me', label: 'Social Portal', subtitle: 'Find me online', xp: 75 },
-  { id: 'contact', label: 'Final Portal', subtitle: 'Start a collaboration', xp: 150 },
+const stageIds = [
+  'home',
+  'toolkit',
+  'story',
+  'education',
+  'experience',
+  'skills',
+  'profiles',
+  'projects',
+  'research',
+  'achievements',
+  'certifications',
+  'explore-me',
+  'contact',
 ];
-
-const TOTAL_XP = stages.reduce((sum, stage) => sum + stage.xp, 0);
-const PLAYER_WIDTH = 58;
-const PLAYER_HEIGHT = 78;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function formatScore(value: number) {
+  return String(value).padStart(6, '0');
+}
+
+function BabyDragon({
+  direction,
+  jumping,
+  running,
+  reduceMotion,
+}: {
+  direction: 1 | -1;
+  jumping: boolean;
+  running: boolean;
+  reduceMotion: boolean;
+}) {
+  return (
+    <motion.div
+      animate={
+        reduceMotion
+          ? undefined
+          : jumping
+            ? { rotate: direction * 5 }
+            : { y: [0, -2, 0] }
+      }
+      transition={
+        jumping
+          ? { duration: 0.2 }
+          : {
+              duration: running ? 0.28 : 1.7,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }
+      }
+      className="h-[96px] w-[124px] origin-bottom"
+      style={{
+        transform: direction === -1 ? 'scaleX(-1)' : 'scaleX(1)',
+      }}
+    >
+      <svg
+        viewBox="0 0 180 140"
+        className="h-full w-full overflow-visible drop-shadow-[0_14px_24px_rgba(34,211,238,0.26)]"
+        aria-hidden="true"
+      >
+        <defs>
+          <linearGradient id="dragonBody" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#67e8f9" />
+            <stop offset="58%" stopColor="#22d3ee" />
+            <stop offset="100%" stopColor="#8b5cf6" />
+          </linearGradient>
+
+          <linearGradient id="dragonBelly" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fef3c7" />
+            <stop offset="100%" stopColor="#fbbf24" />
+          </linearGradient>
+
+          <linearGradient id="dragonWing" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#c4b5fd" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.42" />
+          </linearGradient>
+        </defs>
+
+        <motion.path
+          d="M50 94 C28 101 17 94 15 80 C25 88 34 82 43 72"
+          fill="none"
+          stroke="url(#dragonBody)"
+          strokeWidth="13"
+          strokeLinecap="round"
+          animate={
+            reduceMotion
+              ? undefined
+              : {
+                  d: [
+                    'M50 94 C28 101 17 94 15 80 C25 88 34 82 43 72',
+                    'M50 94 C27 94 19 86 17 74 C27 83 35 78 43 72',
+                    'M50 94 C28 101 17 94 15 80 C25 88 34 82 43 72',
+                  ],
+                }
+          }
+          transition={{
+            duration: 0.65,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+
+        <motion.path
+          d="M71 67 C49 41 44 30 50 18 C66 27 76 38 82 55"
+          fill="url(#dragonWing)"
+          stroke="#a5f3fc"
+          strokeWidth="2"
+          animate={
+            reduceMotion
+              ? undefined
+              : {
+                  rotate: running ? [0, -10, 6, 0] : [0, -4, 0],
+                }
+          }
+          transition={{
+            duration: running ? 0.38 : 1.8,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          style={{ transformOrigin: '73px 63px' }}
+        />
+
+        <motion.path
+          d="M94 64 C111 39 124 31 139 32 C137 47 125 59 108 69"
+          fill="url(#dragonWing)"
+          stroke="#c4b5fd"
+          strokeWidth="2"
+          animate={
+            reduceMotion
+              ? undefined
+              : {
+                  rotate: running ? [0, 9, -6, 0] : [0, 4, 0],
+                }
+          }
+          transition={{
+            duration: running ? 0.38 : 1.8,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          style={{ transformOrigin: '103px 65px' }}
+        />
+
+        <ellipse
+          cx="86"
+          cy="82"
+          rx="39"
+          ry="35"
+          fill="url(#dragonBody)"
+          stroke="#cffafe"
+          strokeWidth="2.5"
+        />
+
+        <ellipse
+          cx="88"
+          cy="89"
+          rx="19"
+          ry="24"
+          fill="url(#dragonBelly)"
+          opacity="0.92"
+        />
+
+        <path
+          d="M67 63 L60 44 L76 55"
+          fill="#a78bfa"
+          stroke="#ede9fe"
+          strokeWidth="2"
+        />
+        <path
+          d="M92 52 L91 33 L104 50"
+          fill="#8b5cf6"
+          stroke="#ede9fe"
+          strokeWidth="2"
+        />
+
+        <ellipse
+          cx="112"
+          cy="58"
+          rx="27"
+          ry="23"
+          fill="url(#dragonBody)"
+          stroke="#cffafe"
+          strokeWidth="2.5"
+        />
+
+        <path
+          d="M101 39 L106 23 L116 42"
+          fill="#fbbf24"
+          stroke="#fef3c7"
+          strokeWidth="2"
+        />
+        <path
+          d="M120 39 L129 25 L132 45"
+          fill="#f59e0b"
+          stroke="#fef3c7"
+          strokeWidth="2"
+        />
+
+        <ellipse cx="121" cy="55" rx="5" ry="6" fill="#020617" />
+        <circle cx="123" cy="53" r="1.5" fill="#ffffff" />
+
+        <ellipse cx="137" cy="64" rx="3.6" ry="2.5" fill="#0f172a" />
+
+        <path
+          d="M126 72 C132 76 139 76 144 71"
+          fill="none"
+          stroke="#0f172a"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+
+        <motion.g
+          animate={
+            reduceMotion
+              ? undefined
+              : running
+                ? { rotate: [16, -20, 16] }
+                : { rotate: 0 }
+          }
+          transition={{
+            duration: 0.3,
+            repeat: running ? Infinity : 0,
+            ease: 'linear',
+          }}
+          style={{ transformOrigin: '72px 104px' }}
+        >
+          <rect
+            x="67"
+            y="101"
+            width="12"
+            height="25"
+            rx="6"
+            fill="#22d3ee"
+          />
+          <path
+            d="M67 124 C73 127 80 127 85 123"
+            fill="none"
+            stroke="#e0f2fe"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+        </motion.g>
+
+        <motion.g
+          animate={
+            reduceMotion
+              ? undefined
+              : running
+                ? { rotate: [-20, 16, -20] }
+                : { rotate: 0 }
+          }
+          transition={{
+            duration: 0.3,
+            repeat: running ? Infinity : 0,
+            ease: 'linear',
+          }}
+          style={{ transformOrigin: '98px 105px' }}
+        >
+          <rect
+            x="94"
+            y="102"
+            width="12"
+            height="25"
+            rx="6"
+            fill="#8b5cf6"
+          />
+          <path
+            d="M94 124 C100 127 107 127 112 123"
+            fill="none"
+            stroke="#ede9fe"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+        </motion.g>
+
+        <motion.path
+          d="M145 62 C156 58 164 60 169 65 C161 68 154 69 146 68 Z"
+          fill="#fb7185"
+          animate={
+            reduceMotion
+              ? undefined
+              : {
+                  opacity: [0.35, 0.75, 0.35],
+                  scaleX: [0.8, 1.05, 0.8],
+                }
+          }
+          transition={{
+            duration: 1.1,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          style={{ transformOrigin: '145px 65px' }}
+        />
+      </svg>
+    </motion.div>
+  );
+}
+
+function SpikeLane() {
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-[92px] z-[66] h-[30px]">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-300/55 to-transparent" />
+
+      <div className="absolute inset-x-0 top-[2px] flex h-[24px] overflow-hidden opacity-90">
+        {Array.from({ length: 46 }).map((_, index) => (
+          <motion.span
+            key={index}
+            animate={{ y: [0, 2, 0] }}
+            transition={{
+              duration: 0.8 + (index % 4) * 0.12,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: (index % 7) * 0.04,
+            }}
+            className="h-0 w-0 shrink-0 border-x-[18px] border-b-0 border-t-[24px] border-x-transparent border-t-red-400/75 drop-shadow-[0_0_8px_rgba(248,113,113,0.35)]"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FireIntro({
+  onStart,
+  onExit,
+}: {
+  onStart: () => void;
+  onExit: () => void;
+}) {
+  const flameBands = [
+    'left-0 top-0 h-full w-10 sm:w-16',
+    'right-0 top-0 h-full w-10 sm:w-16',
+    'left-0 top-0 h-10 w-full sm:h-16',
+    'bottom-0 left-0 h-10 w-full sm:h-16',
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-[#02050c]/84 px-4 backdrop-blur-md"
+    >
+      {flameBands.map((className, index) => (
+        <motion.div
+          key={className}
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{
+            opacity: [0, 0.9, 0.62, 0.9, 0.48],
+            scale: [0.88, 1.05, 0.98, 1.03, 1],
+          }}
+          transition={{
+            duration: 1.15,
+            delay: index * 0.05,
+            ease: 'easeOut',
+          }}
+          className={`pointer-events-none absolute ${className}`}
+          style={{
+            background:
+              'radial-gradient(circle at center, rgba(254,240,138,.95) 0%, rgba(251,146,60,.88) 28%, rgba(239,68,68,.68) 56%, rgba(127,29,29,.18) 76%, transparent 100%)',
+            filter: 'blur(7px)',
+            boxShadow:
+              '0 0 28px rgba(251,146,60,.6), 0 0 70px rgba(239,68,68,.34)',
+          }}
+        />
+      ))}
+
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 0.32, duration: 0.55 }}
+        className="relative w-full max-w-xl rounded-[2rem] border border-orange-300/15 bg-[#07101d]/96 p-6 text-center shadow-[0_30px_100px_rgba(0,0,0,0.58)] sm:p-8"
+      >
+        <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_top,rgba(251,146,60,.08),transparent_45%)]" />
+
+        <div className="relative">
+          <motion.div
+            animate={{ rotate: [-5, 4, -5] }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-300/[0.08] text-orange-200"
+          >
+            <Flame size={26} />
+          </motion.div>
+
+          <p className="mt-5 text-[10px] font-black uppercase tracking-[0.32em] text-orange-300">
+            Dragon Run
+          </p>
+
+          <h2 className="mt-2 font-[var(--font-space)] text-4xl font-black tracking-tight text-white sm:text-5xl">
+            GAME MODE
+          </h2>
+
+          <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400">
+            Scroll through the real portfolio while the baby dragon runs across
+            the headings. New text platforms trigger automatic jumps.
+          </p>
+
+          <div className="mt-6 grid gap-3 text-left sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
+              <div className="flex items-center gap-2 text-cyan-200">
+                <MousePointer2 size={16} />
+                <span className="text-[10px] font-black uppercase tracking-[0.18em]">
+                  Move
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Mouse wheel, trackpad, swipe, S / D, or ↓ / → moves forward.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
+              <div className="flex items-center gap-2 text-violet-200">
+                <Keyboard size={16} />
+                <span className="text-[10px] font-black uppercase tracking-[0.18em]">
+                  Jump
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Space or W / ↑ jumps. A fast second jump can hit the spikes.
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-red-300/80">
+            Spike lane under the navbar = game over
+          </p>
+
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={onStart}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-cyan-300 px-5 py-3.5 text-sm font-black text-slate-950 transition hover:bg-cyan-200"
+            >
+              <Gamepad2 size={17} />
+              Start Dragon Run
+            </button>
+
+            <button
+              type="button"
+              onClick={onExit}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.035] px-5 py-3.5 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white"
+            >
+              <X size={16} />
+              Normal Mode
+            </button>
+          </div>
+
+          <p className="mt-4 text-[10px] text-slate-600">
+            Esc exits game mode anytime. On mobile, a quick tap performs a jump.
+          </p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export function PortfolioGameMode() {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = Boolean(useReducedMotion());
 
   const [active, setActive] = useState(false);
   const [introOpen, setIntroOpen] = useState(false);
-  const [stageIndex, setStageIndex] = useState(0);
-  const [completed, setCompleted] = useState<string[]>([]);
-  const [playerProgress, setPlayerProgress] = useState(0.06);
+  const [score, setScore] = useState(0);
+  const [dragonX, setDragonX] = useState(0);
+  const [dragonFeetY, setDragonFeetY] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
-  const [walking, setWalking] = useState(false);
-  const [jumping, setJumping] = useState(false);
-  const [platform, setPlatform] = useState<Platform>({
-    left: 48,
-    top: 360,
-    width: 720,
-  });
-  const [toast, setToast] = useState<string | null>(null);
-  const [victoryOpen, setVictoryOpen] = useState(false);
+  const [jumpLevel, setJumpLevel] = useState<0 | 1 | 2>(0);
+  const [autoHop, setAutoHop] = useState(false);
+  const [running, setRunning] = useState(true);
+  const [gameOver, setGameOver] = useState(false);
 
-  const keysRef = useRef(new Set<string>());
-  const toastTimerRef = useRef<number | null>(null);
+  const lastScrollYRef = useRef(0);
+  const scoreRef = useRef(0);
+  const headingKeyRef = useRef<string | null>(null);
+  const headingIndexRef = useRef(-1);
+  const dragonFeetRef = useRef(0);
   const jumpTimerRef = useRef<number | null>(null);
-  const transitionLockRef = useRef(false);
-  const lastFrameRef = useRef<number | null>(null);
+  const autoHopTimerRef = useRef<number | null>(null);
+  const runningTimerRef = useRef<number | null>(null);
+  const gameOverTimerRef = useRef<number | null>(null);
+  const lastJumpAtRef = useRef(0);
+  const touchStartRef = useRef<{
+    x: number;
+    y: number;
+    time: number;
+  } | null>(null);
 
-  const currentStage = stages[stageIndex];
+  const updateScore = useCallback((points: number) => {
+    if (points <= 0) return;
 
-  const currentXp = useMemo(
-    () =>
-      stages
-        .filter(stage => completed.includes(stage.id))
-        .reduce((sum, stage) => sum + stage.xp, 0),
-    [completed],
-  );
-
-  const progressPercent = Math.round(
-    (completed.length / stages.length) * 100,
-  );
-
-  const showToast = useCallback((message: string) => {
-    if (toastTimerRef.current) {
-      window.clearTimeout(toastTimerRef.current);
-    }
-
-    setToast(message);
-
-    toastTimerRef.current = window.setTimeout(() => {
-      setToast(null);
-    }, 1400);
+    scoreRef.current += points;
+    setScore(scoreRef.current);
   }, []);
 
-  const syncPlatform = useCallback(() => {
-    if (!active) return;
+  const triggerGameOver = useCallback(() => {
+    if (gameOverTimerRef.current) {
+      window.clearTimeout(gameOverTimerRef.current);
+    }
 
-    const section = document.getElementById(currentStage.id);
-    if (!section) return;
+    setGameOver(true);
+    setJumpLevel(0);
+    setAutoHop(false);
 
-    const heading =
-      section.querySelector<HTMLElement>('h1, h2, h3') ??
-      section.querySelector<HTMLElement>('p');
+    gameOverTimerRef.current = window.setTimeout(() => {
+      setActive(false);
+      setIntroOpen(false);
+      setGameOver(false);
+      setRunning(false);
+    }, 1050);
+  }, []);
 
-    if (!heading) return;
+  const measureWorld = useCallback(() => {
+    if (!active || introOpen || gameOver) return;
 
-    const rect = heading.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+    const centerX = viewportWidth * 0.5;
+    const centerY = viewportHeight * 0.55;
 
-    const minWidth = Math.min(520, viewportWidth - 48);
-    const desiredWidth = Math.max(rect.width, minWidth);
-    const maxWidth = viewportWidth - 48;
-    const width = Math.min(desiredWidth, maxWidth);
+    const candidates = stageIds
+      .map((id, index) => {
+        const section = document.getElementById(id);
+        const heading =
+          section?.querySelector<HTMLElement>('h1, h2, h3') ?? null;
 
-    const center = clamp(
-      rect.left + rect.width / 2,
-      width / 2 + 24,
-      viewportWidth - width / 2 - 24,
+        if (!heading) return null;
+
+        const rect = heading.getBoundingClientRect();
+
+        return {
+          id,
+          index,
+          heading,
+          rect,
+          distance: Math.abs(rect.top - centerY),
+        };
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          id: string;
+          index: number;
+          heading: HTMLElement;
+          rect: DOMRect;
+          distance: number;
+        } => Boolean(item),
+      )
+      .filter(
+        item =>
+          item.rect.bottom > -160 &&
+          item.rect.top < viewportHeight + 160,
+      )
+      .sort((a, b) => a.distance - b.distance);
+
+    const activeHeading = candidates[0];
+
+    if (!activeHeading) {
+      const fallbackFeet = centerY + 48;
+      dragonFeetRef.current = fallbackFeet;
+      setDragonX(centerX - 62);
+      setDragonFeetY(fallbackFeet);
+      return;
+    }
+
+    const headingCenterX =
+      activeHeading.rect.left + activeHeading.rect.width / 2;
+
+    const lockedCenterX = clamp(
+      headingCenterX,
+      centerX - 110,
+      centerX + 110,
     );
 
-    const left = center - width / 2;
-    const top = clamp(
-      rect.top - 8,
-      170,
-      viewportHeight - 150,
+    const feetY = clamp(
+      activeHeading.rect.top - 2,
+      centerY - 64,
+      centerY + 72,
     );
 
-    setPlatform({
-      left,
-      top,
-      width,
-    });
-  }, [active, currentStage.id]);
+    dragonFeetRef.current = feetY;
+    setDragonX(lockedCenterX - 62);
+    setDragonFeetY(feetY);
 
-  const scrollToStage = useCallback(
-    (index: number) => {
-      const nextStage = stages[index];
-      const target = document.getElementById(nextStage.id);
+    const headingKey = `${activeHeading.id}:${activeHeading.heading.textContent ?? ''}`;
 
-      if (!target) return;
+    if (
+      headingKeyRef.current &&
+      headingKeyRef.current !== headingKey
+    ) {
+      setAutoHop(true);
 
-      target.scrollIntoView({
-        behavior: reduceMotion ? 'auto' : 'smooth',
-        block: 'start',
-      });
+      if (autoHopTimerRef.current) {
+        window.clearTimeout(autoHopTimerRef.current);
+      }
+
+      autoHopTimerRef.current = window.setTimeout(() => {
+        setAutoHop(false);
+      }, 430);
+
+      if (activeHeading.index > headingIndexRef.current) {
+        updateScore(50);
+      }
+    }
+
+    headingKeyRef.current = headingKey;
+    headingIndexRef.current = activeHeading.index;
+  }, [active, gameOver, introOpen, updateScore]);
+
+  const performJump = useCallback(() => {
+    if (!active || introOpen || gameOver) return;
+
+    const now = performance.now();
+    const isDoubleJump =
+      jumpLevel === 1 && now - lastJumpAtRef.current < 330;
+
+    lastJumpAtRef.current = now;
+
+    if (isDoubleJump) {
+      setJumpLevel(2);
 
       window.setTimeout(() => {
-        window.requestAnimationFrame(syncPlatform);
-      }, reduceMotion ? 0 : 520);
-    },
-    [reduceMotion, syncPlatform],
-  );
+        const projectedTop =
+          dragonFeetRef.current - DRAGON_HEIGHT - 310;
 
-  const jump = useCallback(() => {
-    if (!active || introOpen || jumping) return;
-
-    setJumping(true);
+        if (projectedTop <= SPIKE_BOTTOM) {
+          triggerGameOver();
+        }
+      }, 120);
+    } else {
+      setJumpLevel(1);
+    }
 
     if (jumpTimerRef.current) {
       window.clearTimeout(jumpTimerRef.current);
     }
 
     jumpTimerRef.current = window.setTimeout(() => {
-      setJumping(false);
-    }, 460);
-  }, [active, introOpen, jumping]);
-
-  const completeStage = useCallback(
-    (index: number) => {
-      if (transitionLockRef.current) return;
-
-      const stage = stages[index];
-      transitionLockRef.current = true;
-
-      setCompleted(items =>
-        items.includes(stage.id) ? items : [...items, stage.id],
-      );
-
-      showToast(`+${stage.xp} XP · ${stage.label} cleared`);
-
-      if (index === stages.length - 1) {
-        window.setTimeout(() => {
-          setVictoryOpen(true);
-          transitionLockRef.current = false;
-        }, 450);
-        return;
-      }
-
-      window.setTimeout(() => {
-        const nextIndex = index + 1;
-
-        setStageIndex(nextIndex);
-        setPlayerProgress(0.06);
-        setDirection(1);
-        scrollToStage(nextIndex);
-
-        window.setTimeout(() => {
-          transitionLockRef.current = false;
-        }, reduceMotion ? 120 : 650);
-      }, 380);
-    },
-    [reduceMotion, scrollToStage, showToast],
-  );
-
-  const goToPreviousStage = useCallback(() => {
-    if (stageIndex === 0 || transitionLockRef.current) return;
-
-    transitionLockRef.current = true;
-    const previousIndex = stageIndex - 1;
-
-    setStageIndex(previousIndex);
-    setPlayerProgress(0.9);
-    setDirection(-1);
-    scrollToStage(previousIndex);
-
-    window.setTimeout(() => {
-      transitionLockRef.current = false;
-    }, reduceMotion ? 120 : 650);
-  }, [reduceMotion, scrollToStage, stageIndex]);
+      setJumpLevel(0);
+    }, isDoubleJump ? 560 : 470);
+  }, [
+    active,
+    gameOver,
+    introOpen,
+    jumpLevel,
+    triggerGameOver,
+  ]);
 
   const startGame = useCallback(() => {
+    scoreRef.current = 0;
+    headingKeyRef.current = null;
+    headingIndexRef.current = -1;
+    lastScrollYRef.current = window.scrollY;
+
+    setScore(0);
     setActive(true);
     setIntroOpen(true);
-    setVictoryOpen(false);
-    setStageIndex(0);
-    setCompleted([]);
-    setPlayerProgress(0.06);
-    setDirection(1);
-    setWalking(false);
-    setJumping(false);
+    setGameOver(false);
+    setJumpLevel(0);
+    setAutoHop(false);
+    setRunning(true);
 
     window.requestAnimationFrame(() => {
-      document.getElementById('home')?.scrollIntoView({
-        behavior: reduceMotion ? 'auto' : 'smooth',
-        block: 'start',
-      });
-
-      window.setTimeout(() => {
-        window.requestAnimationFrame(syncPlatform);
-      }, reduceMotion ? 0 : 450);
+      measureWorld();
     });
-  }, [reduceMotion, syncPlatform]);
+  }, [measureWorld]);
 
   const exitGame = useCallback(() => {
-    keysRef.current.clear();
-    setWalking(false);
     setActive(false);
     setIntroOpen(false);
-    setVictoryOpen(false);
-    setJumping(false);
+    setGameOver(false);
+    setRunning(false);
+    setJumpLevel(0);
+    setAutoHop(false);
   }, []);
-
-  const restartGame = useCallback(() => {
-    transitionLockRef.current = false;
-    setCompleted([]);
-    setStageIndex(0);
-    setPlayerProgress(0.06);
-    setDirection(1);
-    setWalking(false);
-    setJumping(false);
-    setVictoryOpen(false);
-
-    window.requestAnimationFrame(() => {
-      scrollToStage(0);
-    });
-  }, [scrollToStage]);
 
   useEffect(() => {
     const handleExternalLaunch = () => {
@@ -298,32 +708,57 @@ export function PortfolioGameMode() {
   }, [startGame]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active || introOpen || gameOver) return;
 
-    const handleViewportChange = () => {
-      window.requestAnimationFrame(syncPlatform);
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollYRef.current;
+
+      if (delta > 0) {
+        updateScore(Math.max(1, Math.round(delta / 10)));
+        setDirection(1);
+      } else if (delta < 0) {
+        setDirection(-1);
+      }
+
+      lastScrollYRef.current = currentY;
+
+      setRunning(true);
+
+      if (runningTimerRef.current) {
+        window.clearTimeout(runningTimerRef.current);
+      }
+
+      runningTimerRef.current = window.setTimeout(() => {
+        setRunning(true);
+      }, 150);
+
+      window.requestAnimationFrame(measureWorld);
     };
 
-    window.addEventListener('scroll', handleViewportChange, { passive: true });
-    window.addEventListener('resize', handleViewportChange);
+    const handleResize = () => {
+      window.requestAnimationFrame(measureWorld);
+    };
 
-    window.requestAnimationFrame(syncPlatform);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleResize);
+
+    window.requestAnimationFrame(measureWorld);
 
     return () => {
-      window.removeEventListener('scroll', handleViewportChange);
-      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
     };
-  }, [active, syncPlatform]);
+  }, [
+    active,
+    gameOver,
+    introOpen,
+    measureWorld,
+    updateScore,
+  ]);
 
   useEffect(() => {
-    if (!active || introOpen || victoryOpen) return;
-
-    const movementKeys = new Set([
-      'a',
-      'd',
-      'arrowleft',
-      'arrowright',
-    ]);
+    if (!active || introOpen || gameOver) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target;
@@ -344,589 +779,240 @@ export function PortfolioGameMode() {
         return;
       }
 
-      if (key === 'w' || key === 'arrowup' || key === ' ') {
+      if (key === ' ' || key === 'w' || key === 'arrowup') {
         event.preventDefault();
-        jump();
+        performJump();
         return;
       }
 
-      if (movementKeys.has(key)) {
+      if (key === 'd' || key === 'arrowright' || key === 's' || key === 'arrowdown') {
         event.preventDefault();
-        keysRef.current.add(key);
+        setDirection(1);
+        window.scrollBy({
+          top: 210,
+          behavior: reduceMotion ? 'auto' : 'smooth',
+        });
+        return;
       }
-    };
 
-    const handleKeyUp = (event: KeyboardEvent) => {
-      keysRef.current.delete(event.key.toLowerCase());
+      if (key === 'a' || key === 'arrowleft') {
+        event.preventDefault();
+        setDirection(-1);
+        window.scrollBy({
+          top: -180,
+          behavior: reduceMotion ? 'auto' : 'smooth',
+        });
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      keysRef.current.clear();
-    };
-  }, [active, exitGame, introOpen, jump, victoryOpen]);
-
-  useEffect(() => {
-    if (!active || introOpen || victoryOpen) return;
-
-    let rafId = 0;
-
-    const frame = (time: number) => {
-      const previous = lastFrameRef.current ?? time;
-      const delta = Math.min((time - previous) / 1000, 0.04);
-      lastFrameRef.current = time;
-
-      const keys = keysRef.current;
-      const movingRight =
-        keys.has('d') || keys.has('arrowright');
-      const movingLeft =
-        keys.has('a') || keys.has('arrowleft');
-
-      const movement = movingRight === movingLeft
-        ? 0
-        : movingRight
-          ? 1
-          : -1;
-
-      setWalking(Boolean(movement));
-
-      if (movement !== 0 && !transitionLockRef.current) {
-        setDirection(movement as 1 | -1);
-
-        setPlayerProgress(previousProgress => {
-          const next = clamp(
-            previousProgress + movement * delta * 0.42,
-            0.035,
-            0.965,
-          );
-
-          if (movement > 0 && next >= 0.935) {
-            window.requestAnimationFrame(() => {
-              completeStage(stageIndex);
-            });
-          }
-
-          if (movement < 0 && next <= 0.045 && stageIndex > 0) {
-            window.requestAnimationFrame(goToPreviousStage);
-          }
-
-          return next;
-        });
-      }
-
-      rafId = window.requestAnimationFrame(frame);
-    };
-
-    rafId = window.requestAnimationFrame(frame);
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-      lastFrameRef.current = null;
-      setWalking(false);
     };
   }, [
     active,
-    completeStage,
-    goToPreviousStage,
+    exitGame,
+    gameOver,
     introOpen,
-    stageIndex,
-    victoryOpen,
+    performJump,
+    reduceMotion,
+  ]);
+
+  useEffect(() => {
+    if (!active || introOpen || gameOver) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch') return;
+
+      touchStartRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+        time: performance.now(),
+      };
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch') return;
+
+      const start = touchStartRef.current;
+      touchStartRef.current = null;
+
+      if (!start) return;
+
+      const dx = event.clientX - start.x;
+      const dy = event.clientY - start.y;
+      const distance = Math.hypot(dx, dy);
+      const duration = performance.now() - start.time;
+
+      if (distance < 14 && duration < 260) {
+        performJump();
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown, {
+      passive: true,
+    });
+    window.addEventListener('pointerup', handlePointerUp, {
+      passive: true,
+    });
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [
+    active,
+    gameOver,
+    introOpen,
+    performJump,
   ]);
 
   useEffect(() => {
     return () => {
-      if (toastTimerRef.current) {
-        window.clearTimeout(toastTimerRef.current);
-      }
-
       if (jumpTimerRef.current) {
         window.clearTimeout(jumpTimerRef.current);
+      }
+
+      if (autoHopTimerRef.current) {
+        window.clearTimeout(autoHopTimerRef.current);
+      }
+
+      if (runningTimerRef.current) {
+        window.clearTimeout(runningTimerRef.current);
+      }
+
+      if (gameOverTimerRef.current) {
+        window.clearTimeout(gameOverTimerRef.current);
       }
     };
   }, []);
 
-  const playerLeft =
-    platform.left + platform.width * playerProgress - PLAYER_WIDTH / 2;
+  const jumpOffset =
+    jumpLevel === 2
+      ? 310
+      : jumpLevel === 1
+        ? 145
+        : autoHop
+          ? 86
+          : 0;
 
-  const playerTop = platform.top - PLAYER_HEIGHT + 2;
-
-  const handlePressStart = (key: 'left' | 'right') => {
-    if (!active || introOpen || victoryOpen) return;
-
-    const mappedKey = key === 'left' ? 'arrowleft' : 'arrowright';
-    keysRef.current.add(mappedKey);
-  };
-
-  const handlePressEnd = (key: 'left' | 'right') => {
-    const mappedKey = key === 'left' ? 'arrowleft' : 'arrowright';
-    keysRef.current.delete(mappedKey);
-  };
+  const dragonTop =
+    dragonFeetY - DRAGON_HEIGHT - jumpOffset;
 
   return (
     <>
-      {!active && (
-        <motion.button
-          type="button"
-          onClick={startGame}
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          whileHover={{ y: -4, scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          data-cursor-interactive="true"
-          className="fixed bottom-5 right-4 z-[70] hidden items-center gap-3 rounded-full border border-cyan-300/20 bg-[#07101d]/92 px-4 py-3 text-sm font-bold text-white shadow-[0_18px_60px_rgba(0,0,0,0.42)] backdrop-blur-2xl xl:flex"
-          aria-label="Start Portfolio Quest game mode"
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200">
-            <Gamepad2 size={19} />
-          </span>
-
-          <span className="text-left">
-            <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-cyan-300">
-              Side-Scroller
-            </span>
-            <span className="mt-0.5 block">Play Portfolio Quest</span>
-          </span>
-        </motion.button>
-      )}
-
       <AnimatePresence>
         {active && (
           <>
-            <div className="pointer-events-none fixed inset-0 z-[58]">
-              <div className="absolute inset-x-0 top-[92px] h-px bg-gradient-to-r from-transparent via-cyan-300/10 to-transparent" />
+            {!introOpen && !gameOver && <SpikeLane />}
 
-              <motion.div
-                animate={{
-                  left: platform.left,
-                  top: platform.top,
-                  width: platform.width,
-                }}
-                transition={{
-                  duration: reduceMotion ? 0 : 0.28,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className="absolute h-[4px] rounded-full bg-gradient-to-r from-cyan-300/25 via-cyan-200/70 to-violet-300/35 shadow-[0_0_22px_rgba(34,211,238,0.22)]"
-              >
-                <div className="absolute inset-x-0 top-[4px] h-[2px] bg-white/[0.035]" />
-
-                <div className="absolute left-0 top-[-5px] h-3 w-3 rounded-full border border-cyan-200/40 bg-[#06111e]" />
+            {!introOpen && !gameOver && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="fixed right-4 top-[132px] z-[72] rounded-xl border border-cyan-300/15 bg-[#07101d]/88 px-3 py-2 text-right shadow-[0_14px_40px_rgba(0,0,0,0.34)] backdrop-blur-xl sm:right-6"
+                >
+                  <p className="text-[8px] font-black uppercase tracking-[0.22em] text-slate-500">
+                    Score
+                  </p>
+                  <p className="mt-0.5 font-[var(--font-space)] text-lg font-black tracking-[0.12em] text-cyan-200">
+                    {formatScore(score)}
+                  </p>
+                </motion.div>
 
                 <motion.div
-                  animate={
-                    reduceMotion
-                      ? undefined
-                      : {
-                          y: [0, -6, 0],
-                          rotate: [0, -5, 5, 0],
+                  animate={{
+                    left: dragonX,
+                    top: dragonTop,
+                  }}
+                  transition={{
+                    left: {
+                      duration: reduceMotion ? 0 : 0.2,
+                      ease: [0.22, 1, 0.36, 1],
+                    },
+                    top: jumpLevel > 0 || autoHop
+                      ? {
+                          duration:
+                            jumpLevel === 2
+                              ? 0.28
+                              : 0.34,
+                          ease: [0.2, 0.85, 0.3, 1],
                         }
-                  }
-                  transition={{
-                    duration: 1.25,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
+                      : {
+                          duration: reduceMotion ? 0 : 0.16,
+                          ease: 'easeOut',
+                        },
                   }}
-                  className="absolute right-[-5px] top-[-42px] flex flex-col items-center"
+                  className="pointer-events-none fixed z-[70]"
+                  aria-hidden="true"
                 >
-                  <Flag size={28} className="text-violet-200" />
-                  <span className="mt-1 rounded-full border border-violet-300/15 bg-[#07101d]/90 px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-violet-100">
-                    Goal
-                  </span>
-                </motion.div>
-              </motion.div>
-            </div>
+                  <BabyDragon
+                    direction={direction}
+                    jumping={jumpLevel > 0 || autoHop}
+                    running={running}
+                    reduceMotion={reduceMotion}
+                  />
 
-            <motion.div
-              animate={{
-                left: playerLeft,
-                top: playerTop,
-                y: jumping ? -78 : walking && !reduceMotion ? [0, -2, 0] : 0,
-                rotate: jumping
-                  ? direction * 7
-                  : walking
-                    ? direction * 2
-                    : 0,
-              }}
-              transition={{
-                left: {
-                  duration: 0.04,
-                  ease: 'linear',
-                },
-                top: {
-                  duration: reduceMotion ? 0 : 0.28,
-                  ease: [0.22, 1, 0.36, 1],
-                },
-                y: jumping
-                  ? {
-                      duration: 0.46,
-                      ease: [0.2, 0.85, 0.35, 1],
+                  <motion.div
+                    animate={
+                      reduceMotion
+                        ? undefined
+                        : {
+                            scaleX: running ? [0.9, 1.12, 0.9] : [0.96, 1.03, 0.96],
+                            opacity: [0.24, 0.42, 0.24],
+                          }
                     }
-                  : walking && !reduceMotion
-                    ? {
-                        duration: 0.22,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      }
-                    : {
-                        duration: 0.15,
-                      },
-                rotate: {
-                  duration: 0.16,
-                },
-              }}
-              className="pointer-events-none fixed z-[68] h-[78px] w-[58px]"
-              style={{
-                transformOrigin: '50% 100%',
-              }}
-              aria-hidden="true"
-            >
-              <div
-                className="relative h-full w-full"
-                style={{
-                  transform:
-                    direction === -1 ? 'scaleX(-1)' : 'scaleX(1)',
-                }}
-              >
-                <motion.div
-                  animate={
-                    walking && !jumping && !reduceMotion
-                      ? { y: [0, -1.5, 0] }
-                      : { y: 0 }
-                  }
-                  transition={{
-                    duration: 0.22,
-                    repeat: walking ? Infinity : 0,
-                  }}
-                  className="absolute left-1/2 top-0 h-[46px] w-[46px] -translate-x-1/2 overflow-hidden rounded-[15px] border-2 border-cyan-200/50 bg-[#07101d] shadow-[0_8px_28px_rgba(34,211,238,0.28)]"
-                >
-                  <Image
-                    src={profile.image}
-                    alt=""
-                    fill
-                    sizes="46px"
-                    className="object-cover"
-                    priority
+                    transition={{
+                      duration: running ? 0.28 : 1.4,
+                      repeat: Infinity,
+                    }}
+                    className="mx-auto -mt-2 h-2 w-20 rounded-full bg-cyan-300/20 blur-[2px]"
                   />
                 </motion.div>
-
-                <div className="absolute left-1/2 top-[42px] h-[25px] w-[30px] -translate-x-1/2 rounded-[7px_7px_5px_5px] border border-cyan-200/25 bg-gradient-to-b from-cyan-300 to-sky-500 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
-                  <div className="absolute left-[5px] top-[6px] h-[8px] w-[4px] rounded-full bg-white/55" />
-                  <div className="absolute right-[5px] top-[6px] h-[8px] w-[4px] rounded-full bg-white/55" />
-                </div>
-
-                <motion.div
-                  animate={
-                    walking && !jumping && !reduceMotion
-                      ? { rotate: [22, -22, 22] }
-                      : { rotate: 0 }
-                  }
-                  transition={{
-                    duration: 0.28,
-                    repeat: walking ? Infinity : 0,
-                    ease: 'linear',
-                  }}
-                  className="absolute bottom-0 left-[16px] h-[17px] w-[7px] origin-top rounded-full bg-violet-300"
-                />
-
-                <motion.div
-                  animate={
-                    walking && !jumping && !reduceMotion
-                      ? { rotate: [-22, 22, -22] }
-                      : { rotate: 0 }
-                  }
-                  transition={{
-                    duration: 0.28,
-                    repeat: walking ? Infinity : 0,
-                    ease: 'linear',
-                  }}
-                  className="absolute bottom-0 right-[16px] h-[17px] w-[7px] origin-top rounded-full bg-cyan-200"
-                />
-
-                {jumping && (
-                  <motion.div
-                    initial={{ opacity: 0.8, scale: 0.6 }}
-                    animate={{ opacity: 0, scale: 1.8 }}
-                    transition={{ duration: 0.4 }}
-                    className="absolute bottom-[-3px] left-1/2 h-5 w-10 -translate-x-1/2 rounded-full border border-cyan-200/30"
-                  />
-                )}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: -14 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="fixed left-3 right-3 top-[84px] z-[69] mx-auto flex max-w-3xl items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#07101d]/88 px-3 py-3 shadow-[0_16px_50px_rgba(0,0,0,0.32)] backdrop-blur-2xl sm:left-5 sm:right-5 sm:px-4"
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/15 bg-cyan-300/[0.06] text-cyan-200">
-                <Gamepad2 size={17} />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200 sm:text-xs">
-                      Stage {stageIndex + 1}/{stages.length} · {currentStage.label}
-                    </p>
-                    <p className="mt-0.5 truncate text-[9px] uppercase tracking-[0.14em] text-slate-500">
-                      {currentStage.subtitle}
-                    </p>
-                  </div>
-
-                  <div className="hidden items-center gap-2 sm:flex">
-                    <span className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.13em] text-cyan-100">
-                      {currentXp}/{TOTAL_XP} XP
-                    </span>
-                    <span className="rounded-full border border-violet-300/15 bg-violet-300/[0.06] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.13em] text-violet-100">
-                      {progressPercent}%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.06]">
-                  <motion.div
-                    animate={{ width: `${progressPercent}%` }}
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-400"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={exitGame}
-                aria-label="Exit game mode"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-slate-400 transition hover:border-red-300/20 hover:bg-red-300/[0.05] hover:text-red-200"
-              >
-                <X size={16} />
-              </button>
-            </motion.div>
-
-            <div className="fixed bottom-4 left-1/2 z-[70] flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-white/[0.08] bg-[#07101d]/90 p-2 shadow-[0_18px_55px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:bottom-5">
-              <button
-                type="button"
-                onPointerDown={() => handlePressStart('left')}
-                onPointerUp={() => handlePressEnd('left')}
-                onPointerLeave={() => handlePressEnd('left')}
-                onPointerCancel={() => handlePressEnd('left')}
-                aria-label="Move left"
-                className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-200 transition hover:border-cyan-300/25 hover:text-cyan-200"
-              >
-                <ArrowLeft size={20} />
-              </button>
-
-              <button
-                type="button"
-                onClick={jump}
-                aria-label="Jump"
-                className="flex h-12 min-w-[66px] items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 text-xs font-black uppercase tracking-[0.1em] text-slate-950 transition hover:bg-cyan-200"
-              >
-                <ChevronUp size={18} />
-                Jump
-              </button>
-
-              <button
-                type="button"
-                onPointerDown={() => handlePressStart('right')}
-                onPointerUp={() => handlePressEnd('right')}
-                onPointerLeave={() => handlePressEnd('right')}
-                onPointerCancel={() => handlePressEnd('right')}
-                aria-label="Move right"
-                className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-200 transition hover:border-cyan-300/25 hover:text-cyan-200"
-              >
-                <ArrowRight size={20} />
-              </button>
-            </div>
-
-            <div className="pointer-events-none fixed bottom-[86px] left-1/2 z-[69] hidden -translate-x-1/2 rounded-full border border-white/[0.07] bg-[#07101d]/75 px-4 py-2 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-500 backdrop-blur-xl md:block">
-              A / D or ← / → to walk · W / ↑ / Space to jump
-            </div>
-
-            <AnimatePresence>
-              {toast && (
-                <motion.div
-                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.96 }}
-                  className="fixed bottom-28 left-1/2 z-[74] -translate-x-1/2 rounded-full border border-cyan-300/15 bg-[#07101d]/95 px-4 py-2 text-center text-xs font-bold text-cyan-100 shadow-[0_16px_45px_rgba(0,0,0,0.42)] backdrop-blur-xl"
-                >
-                  {toast}
-                </motion.div>
-              )}
-            </AnimatePresence>
+              </>
+            )}
 
             <AnimatePresence>
               {introOpen && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[76] flex items-center justify-center bg-[#030712]/80 px-4 py-20 backdrop-blur-xl"
-                >
-                  <motion.div
-                    initial={{ opacity: 0, y: 24, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 16, scale: 0.97 }}
-                    className="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-cyan-300/[0.14] bg-[#07101d] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.55)] sm:p-8"
-                  >
-                    <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-300/[0.08] blur-[85px]" />
-                    <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-violet-500/[0.08] blur-[90px]" />
+                <FireIntro
+                  onStart={() => {
+                    setIntroOpen(false);
+                    lastScrollYRef.current = window.scrollY;
 
-                    <div className="relative">
-                      <div className="flex items-center gap-4">
-                        <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-cyan-300/25">
-                          <Image
-                            src={profile.image}
-                            alt={profile.name}
-                            fill
-                            sizes="64px"
-                            className="object-cover"
-                          />
-                        </div>
-
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-300">
-                            Side-Scroller Mode
-                          </p>
-                          <h2 className="mt-1 font-[var(--font-space)] text-2xl font-black text-white sm:text-3xl">
-                            Walk across the portfolio.
-                          </h2>
-                        </div>
-                      </div>
-
-                      <p className="mt-6 text-sm leading-7 text-slate-300 sm:text-base">
-                        Your mini Alvy avatar will land on each portfolio
-                        section heading. Walk across the text, jump while you
-                        move, and reach the flag on the right to unlock the next
-                        section.
-                      </p>
-
-                      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                        {[
-                          ['A / D', 'Walk'],
-                          ['W / Space', 'Jump'],
-                          [String(stages.length), 'Stages'],
-                        ].map(([value, label]) => (
-                          <div
-                            key={label}
-                            className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4"
-                          >
-                            <p className="font-[var(--font-space)] text-xl font-black text-white">
-                              {value}
-                            </p>
-                            <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                              {label}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="mt-6 flex gap-3 rounded-2xl border border-violet-300/[0.1] bg-violet-300/[0.04] p-4">
-                        <Sparkles
-                          size={18}
-                          className="mt-0.5 shrink-0 text-violet-200"
-                        />
-                        <p className="text-xs leading-6 text-slate-400">
-                          This uses the real portfolio as the game world. No
-                          duplicate pages. Each real heading becomes your next
-                          platform.
-                        </p>
-                      </div>
-
-                      <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIntroOpen(false);
-                            window.requestAnimationFrame(syncPlatform);
-                          }}
-                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-cyan-300 px-5 py-3.5 text-sm font-black text-slate-950 transition hover:bg-cyan-200"
-                        >
-                          <Gamepad2 size={17} />
-                          Start Walking
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={exitGame}
-                          className="inline-flex items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.035] px-5 py-3.5 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white"
-                        >
-                          Continue Normal Mode
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                </motion.div>
+                    window.requestAnimationFrame(() => {
+                      measureWorld();
+                    });
+                  }}
+                  onExit={exitGame}
+                />
               )}
             </AnimatePresence>
 
             <AnimatePresence>
-              {victoryOpen && (
+              {gameOver && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[77] flex items-center justify-center bg-[#030712]/76 px-4 py-20 backdrop-blur-xl"
+                  className="pointer-events-none fixed inset-0 z-[92] flex items-center justify-center bg-red-950/18 backdrop-blur-[2px]"
                 >
                   <motion.div
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-cyan-300/[0.15] bg-[#07101d] p-7 text-center shadow-[0_30px_100px_rgba(0,0,0,0.55)] sm:p-9"
+                    initial={{ opacity: 0, scale: 0.84, y: 16 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 1.06 }}
+                    className="rounded-2xl border border-red-300/20 bg-[#08090f]/94 px-7 py-5 text-center shadow-[0_24px_80px_rgba(127,29,29,0.4)]"
                   >
-                    <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/[0.1] blur-[90px]" />
-
-                    <div className="relative">
-                      <motion.div
-                        animate={
-                          reduceMotion
-                            ? undefined
-                            : { y: [0, -8, 0], rotate: [0, -4, 4, 0] }
-                        }
-                        transition={{
-                          duration: 1.4,
-                          repeat: Infinity,
-                          repeatDelay: 0.8,
-                        }}
-                        className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.7rem] border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200"
-                      >
-                        <Trophy size={36} />
-                      </motion.div>
-
-                      <p className="mt-6 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">
-                        Full Run Complete
-                      </p>
-
-                      <h2 className="mt-2 font-[var(--font-space)] text-3xl font-black text-white sm:text-4xl">
-                        You walked through the entire portfolio.
-                      </h2>
-
-                      <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-slate-400">
-                        All {stages.length} stages cleared and {TOTAL_XP} XP
-                        collected.
-                      </p>
-
-                      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                        <button
-                          type="button"
-                          onClick={restartGame}
-                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-5 py-3.5 text-sm font-semibold text-white transition hover:border-cyan-300/20 hover:bg-white/[0.07]"
-                        >
-                          <RotateCcw size={16} />
-                          Replay
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={exitGame}
-                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-cyan-300 px-5 py-3.5 text-sm font-black text-slate-950 transition hover:bg-cyan-200"
-                        >
-                          <Zap size={16} />
-                          Back to Portfolio
-                        </button>
-                      </div>
-                    </div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.25em] text-red-300">
+                      Spike Hit
+                    </p>
+                    <p className="mt-1 font-[var(--font-space)] text-3xl font-black text-white">
+                      GAME OVER
+                    </p>
+                    <p className="mt-2 text-xs text-slate-400">
+                      Score {formatScore(score)} · continuing normal portfolio
+                    </p>
                   </motion.div>
                 </motion.div>
               )}
