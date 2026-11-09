@@ -234,6 +234,18 @@ export function PortfolioGameMode() {
   };
 
   useEffect(() => {
+    const handleExternalLaunch = () => {
+      startGame();
+    };
+
+    window.addEventListener('portfolio-quest:start', handleExternalLaunch);
+
+    return () => {
+      window.removeEventListener('portfolio-quest:start', handleExternalLaunch);
+    };
+  });
+
+  useEffect(() => {
     if (!active || briefingOpen) return;
 
     const target = document.getElementById(currentMission.id);
