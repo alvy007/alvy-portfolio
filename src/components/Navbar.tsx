@@ -6,7 +6,7 @@ import {
   useMotionValueEvent,
   useScroll,
 } from 'framer-motion';
-import { Download, Menu, X } from 'lucide-react';
+import { Download, Gamepad2, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FaGithub, FaLinkedin } from 'react-icons/fa';
 import { profile } from '../data/profile';
@@ -36,6 +36,11 @@ export function Navbar() {
   const [activeSection, setActiveSection] = useState('home');
 
   const { scrollY, scrollYProgress } = useScroll();
+
+  const launchGameMode = () => {
+    window.dispatchEvent(new CustomEvent('portfolio-quest:start'));
+    setOpen(false);
+  };
 
   useMotionValueEvent(scrollY, 'change', latest => {
     setScrolled(latest > 24);
@@ -216,6 +221,19 @@ export function Navbar() {
               />
             </a>
 
+            <button
+              type="button"
+              onClick={launchGameMode}
+              aria-label="Launch Portfolio Quest"
+              className="group inline-flex items-center gap-2 rounded-full border border-violet-300/20 bg-violet-300/[0.07] px-4 py-2.5 text-sm font-bold text-violet-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-300/30 hover:bg-cyan-300/[0.08] hover:text-cyan-100"
+            >
+              <Gamepad2
+                size={16}
+                className="transition-transform duration-300 group-hover:scale-110"
+              />
+              GAME
+            </button>
+
             <a
               href={profile.cv}
               target="_blank"
@@ -332,6 +350,15 @@ export function Navbar() {
                   </div>
 
                   <div className="my-3 h-px bg-white/[0.07]" />
+
+                  <button
+                    type="button"
+                    onClick={launchGameMode}
+                    className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-violet-300/20 bg-violet-300/[0.07] p-3 text-xs font-bold text-violet-100 transition hover:border-cyan-300/25 hover:bg-cyan-300/[0.08] hover:text-cyan-100"
+                  >
+                    <Gamepad2 size={15} />
+                    Launch Game
+                  </button>
 
                   <div className="grid grid-cols-3 gap-2">
                     <a
