@@ -31,9 +31,4 @@ export const socials = [
     label: 'Community and personal profile',
     url: profile.facebook,
   },
-  {
-    name: 'Portfolio',
-    label: 'My complete engineering portfolio',
-    url: profile.portfolio,
-  },
 ];
