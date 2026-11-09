@@ -16,14 +16,15 @@ export function CertificationsSection() {
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-cyan-300">
             Certifications
           </p>
+
           <h2 className="font-[var(--font-space)] text-3xl font-black tracking-tight text-white md:text-5xl">
-            Learning through platforms, practice, and professional courses.
+            Focused credentials supporting practical engineering skills.
           </h2>
         </div>
 
         <p className="max-w-md text-sm leading-6 text-slate-400">
-          Certificate images and credential links can be added later from one
-          data file without changing the design.
+          Core professional credentials currently highlighted in my updated CV,
+          spanning networking, software testing, and technology development.
         </p>
       </div>
 
@@ -36,6 +37,7 @@ export function CertificationsSection() {
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.5, delay: index * 0.05 }}
             whileHover={{ y: -8 }}
+            data-cursor-interactive="true"
             className="group glass-card relative overflow-hidden rounded-3xl p-5"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-300/0 to-violet-500/0 transition group-hover:from-cyan-300/10 group-hover:to-violet-500/10" />
@@ -55,15 +57,22 @@ export function CertificationsSection() {
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
                   {item.platform}
                 </p>
+
                 <h3 className="mt-1 font-[var(--font-space)] text-lg font-bold text-white">
                   {item.title}
                 </h3>
               </div>
             </div>
 
-            <div className="relative mt-5 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-slate-300">
-              <BadgeCheck size={17} className="text-cyan-200" />
-              Credential placeholder
+            <div className="relative mt-5 flex gap-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+              <BadgeCheck
+                size={17}
+                className="mt-0.5 shrink-0 text-cyan-200"
+              />
+
+              <p className="text-sm leading-6 text-slate-300">
+                {item.focus}
+              </p>
             </div>
           </motion.article>
         ))}
