@@ -11,6 +11,7 @@ import { Footer } from '../components/Footer';
 import { Hero } from '../components/Hero';
 import { HeroQuote } from '../components/HeroQuote';
 import { Navbar } from '../components/Navbar';
+import { PortfolioGameMode } from '../components/PortfolioGameMode';
 import { ProjectsSection } from '../components/ProjectsSection';
 import { ResearchSection } from '../components/ResearchSection';
 import { SkillUniverse } from '../components/SkillUniverse';
@@ -21,6 +22,7 @@ export default function Home() {
     <main className="min-h-screen overflow-hidden bg-[#030712] text-white">
       <BackgroundEffects />
       <Navbar />
+      <PortfolioGameMode />
 
       <Hero />
       <HeroQuote />
