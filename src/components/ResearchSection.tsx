@@ -205,9 +205,10 @@ export function ResearchSection() {
             }}
           >
             <p className="max-w-xl text-sm leading-7 text-slate-400 md:text-base">
-              My research interests connect artificial intelligence, robotics,
-              cybersecurity, computer vision, and sustainable systems with
-              practical engineering challenges.
+              My research interests connect human-computer interaction,
+              generative AI, computer vision, robotics, cybersecurity, and
+              sustainable intelligent systems with practical engineering
+              challenges.
             </p>
 
             <div className="mt-6 flex items-center gap-3">
