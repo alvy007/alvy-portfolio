@@ -127,7 +127,7 @@ export function ResearchSection() {
     [],
   );
 
-  const activeResearchCount = researchItems.length - paperCount;
+  const activeResearchCount = researchItems.filter(item => item.active).length;
 
   return (
     <section
